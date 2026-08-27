@@ -1,0 +1,42 @@
+.shipmentDetails {
+  --content-width: 40vw;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.title {
+  margin: 0;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.placeholder {
+  padding: 1rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.error {
+  padding: 1rem;
+  color: var(--error, #b00020);
+}
+
+.shipmentDetails button {
+  margin: 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.25rem;
+  background: var(--accent);
+  color: #fff;
+  align-self: flex-end;
+}
+
+.shipmentDetails button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

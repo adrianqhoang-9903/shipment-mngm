@@ -1,0 +1,78 @@
+import { useStatuses } from "../../hooks/useStatuses";
+import type { UseShipmentsResult } from "../../hooks/useShipments";
+import ShipmentSearch from "./ShipmentSearch";
+import ShipmentFilters from "./ShipmentFilters";
+import ShipmentTable from "./ShipmentTable";
+import Pagination from "./Pagination";
+import type { ShipmentStatus } from "../../types";
+import styles from "./index.module.css";
+
+interface ShipmentListProps extends Omit<UseShipmentsResult, "patchShipment"> {
+  onSelectShipment: (id: string) => void;
+}
+
+const ShipmentList = ({
+  shipments,
+  params,
+  updateParams,
+  isLoading,
+  error,
+  totalPages,
+  totalItems,
+  hasNextPage,
+  refetch,
+  onSelectShipment,
+}: ShipmentListProps) => {
+  const { statuses, isLoading: statusesLoading } = useStatuses();
+
+  const handleSearch = (query: string) => {
+    updateParams({ query, page: 1 });
+  };
+
+  const handleStatusChange = (status: ShipmentStatus) => {
+    updateParams({ status, page: 1 });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateParams({ page });
+  };
+
+  return (
+    <div className={styles.shipmentList}>
+      <div className={styles.controls}>
+        <ShipmentSearch onSearch={handleSearch} />
+        <ShipmentFilters
+          statuses={statuses}
+          value={params.status}
+          onChange={handleStatusChange}
+          disabled={statusesLoading}
+        />
+      </div>
+      {error && (
+        <div className={styles.errorBanner}>
+          <p className={styles.error}>{error}</p>
+          <button onClick={refetch}>Retry</button>
+        </div>
+      )}
+      {!error && (
+        <>
+          <ShipmentTable
+            shipments={shipments}
+            isLoading={isLoading}
+            onSelectShipment={onSelectShipment}
+          />
+          <Pagination
+            page={params.page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            hasNextPage={hasNextPage}
+            isLoading={isLoading}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
+    </div>
+  );
+};
+
+export default ShipmentList;

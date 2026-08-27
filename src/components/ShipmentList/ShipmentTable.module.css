@@ -1,0 +1,54 @@
+.tableContainer {
+  width: var(--content-width);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.colClient {
+  width: 30%;
+}
+
+.colLabel {
+  width: 45%;
+}
+
+.colDate {
+  width: 25%;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.table tbody tr {
+  cursor: pointer;
+}
+
+.table tbody tr:hover {
+  background-color: var(--code-bg);
+}
+
+.status {
+  padding: 1rem;
+  color: var(--text);
+}
