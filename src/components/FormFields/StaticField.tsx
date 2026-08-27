@@ -1,4 +1,4 @@
-import styles from "./ShipmentField.module.css";
+import styles from "./FormFields.module.css";
 
 interface StaticFieldProps {
   label: string;

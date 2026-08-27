@@ -1,7 +1,7 @@
-import { useState, type ChangeEvent, type FocusEvent } from "react";
-import styles from "./ShipmentField.module.css";
+import { useState, type ChangeEvent } from "react";
+import styles from "./FormFields.module.css";
 
-interface EditableFieldProps {
+interface TextFieldProps {
   name: string;
   label: string;
   type: "date" | "number" | "text";
@@ -14,7 +14,7 @@ interface EditableFieldProps {
   validate?: (value: string) => string;
 }
 
-const EditableField = ({
+const TextField = ({
   name,
   label,
   type,
@@ -25,11 +25,11 @@ const EditableField = ({
   max,
   required,
   validate,
-}: EditableFieldProps) => {
+}: TextFieldProps) => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const applyValidation = (
-    event: ChangeEvent<HTMLInputElement> | FocusEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>,
   ) => {
     if (validate) {
       event.target.setCustomValidity(validate(event.target.value));
@@ -58,7 +58,6 @@ const EditableField = ({
           max={max}
           required={required}
           onChange={handleChange}
-          // onBlur={handleBlur}
         />
         {errorMessage && (
           <span className={styles.errorMessage}>{errorMessage}</span>
@@ -68,4 +67,4 @@ const EditableField = ({
   );
 };
 
-export default EditableField;
+export default TextField;

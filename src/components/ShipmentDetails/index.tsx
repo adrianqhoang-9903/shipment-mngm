@@ -8,17 +8,24 @@ import ShipmentLocationMap from "./ShipmentLocationMap";
 
 interface ShipmentDetailsProps {
   patchShipment: (updates: Shipment) => void;
+  refetchList: () => void;
 }
 
-const ShipmentDetails = ({ patchShipment }: ShipmentDetailsProps) => {
+const ShipmentDetails = ({ patchShipment, refetchList }: ShipmentDetailsProps) => {
   const { id } = useParams();
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onShipmentSaved = (savedShipment: Shipment) => {
+    const statusChanged = shipment?.status !== savedShipment.status;
     setShipment(savedShipment);
-    patchShipment(savedShipment);
+
+    if (statusChanged) { // possibly stale list
+      refetchList();
+    } else {
+      patchShipment(savedShipment);
+    }
   };
 
   useEffect(() => {

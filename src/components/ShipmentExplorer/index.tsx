@@ -37,7 +37,7 @@ const ShipmentExplorer = () => {
         refetch={refetch}
         onSelectShipment={handleSelectShipment}
       />
-      <ShipmentDetails patchShipment={patchShipment} />
+      <ShipmentDetails patchShipment={patchShipment} refetchList={refetch} />
     </div>
   );
 };
