@@ -3361,7 +3361,7 @@
       "label": "SFO-581-250528-228",
       "status": "OPEN",
       "arrival_date": "2026-08-26T14:35:31.349Z",
-      "delivery_by_date": "2026-08-28T14:35:31.349Z",
+      "delivery_by_date": "2026-08-30T00:00:00.000Z",
       "eta": "2026-08-27T02:35:31.349Z",
       "warehouse_id": "581",
       "assignment_id": null,

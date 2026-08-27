@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "../../hooks/useForm";
-import { fetchAssignmentById, fetchOpenAssignments } from "../../services/assignments";
+import {
+  fetchAssignmentById,
+  fetchOpenAssignments,
+} from "../../services/assignments";
 import { saveShipment } from "../../services/shipments";
 import { toISODate, toDisplayDate } from "../../utils/date";
 import {
@@ -66,6 +69,11 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
   const [assignmentLabel, setAssignmentLabel] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const assignmentsAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => assignmentsAbortRef.current?.abort();
+  }, []);
 
   const isAssigning =
     shipment.status === "OPEN" && values.status === "IN_TRANSIT";
@@ -90,8 +98,6 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
   const onValid = async (formValues: FormValues) => {
     setIsSaving(true);
     setSaveError(null);
-
-    if (isAssigning && !formValues.assignment_id) { setSaveError(""); return; }
 
     try {
       const saved = await saveShipment(toApiPayload(shipment, formValues));
@@ -130,15 +136,24 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
       return;
     }
 
-    if (shipment.status === "OPEN" && assignments.length === 0 && !assignmentsLoading) {
+    if (
+      shipment.status === "OPEN" &&
+      assignments.length === 0 &&
+      !assignmentsLoading
+    ) {
       setAssignmentsLoading(true);
-      fetchOpenAssignments()
+      const controller = new AbortController();
+      assignmentsAbortRef.current = controller;
+      fetchOpenAssignments(controller.signal)
         .then(setAssignments)
         .catch(() => {
+          if (controller.signal.aborted) return;
           // Leave the list empty - the select just shows no options rather
           // than blocking the rest of the form.
         })
-        .finally(() => setAssignmentsLoading(false));
+        .finally(() => {
+          if (!controller.signal.aborted) setAssignmentsLoading(false);
+        });
     }
   };
 
@@ -188,7 +203,7 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
         required
       />
       <StaticField label="Warehouse" value={shipment.warehouse_id} />
-      {shipment.status === "OPEN" ? (
+      {shipment.status === "OPEN" && isAssigning ? (
         <SelectField
           name="assignment_id"
           label="Assignment"
@@ -196,14 +211,12 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
           options={assignmentOptions}
           onChange={handleAssignmentChange}
           placeholder={
-            !isAssigning
-              ? "—"
-              : assignmentsLoading
-                ? "Loading assignments..."
-                : "Select an assignment..."
+            assignmentsLoading
+              ? "Loading assignments..."
+              : "Select an assignment..."
           }
-          disabled={assignmentsLoading || !isAssigning}
-          required={isAssigning}
+          disabled={assignmentsLoading}
+          required
         />
       ) : (
         <StaticField

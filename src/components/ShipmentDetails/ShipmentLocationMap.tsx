@@ -8,13 +8,6 @@ interface ShipmentLocationMapProps {
   shipment: Shipment;
 }
 
-// MapContainer's `center` prop only initializes the view once - unlike
-// Marker's `position`, it doesn't reactively re-center on later prop
-// changes, since the underlying Leaflet map is an imperative object React
-// doesn't otherwise own. Synchronizing it with the current coordinates on
-// every change is exactly what useEffect is for here (an external, non-React
-// system needs to be told about a state change) - not the same category
-// as the fetch-in-effect cases avoided elsewhere in this app.
 const RecenterOnChange = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
 

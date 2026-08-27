@@ -42,6 +42,11 @@ export const useForm = <T extends object>(
     setIsValid(formRef.current?.checkValidity() ?? true);
   };
 
+  // Callback ref instead of a plain RefObject: it fires synchronously at
+  // mount time (commit phase, before paint), so the initial isValid check
+  // runs as soon as the form's DOM actually exists - no separate mount-only
+  // useEffect needed, and no window where isValid is stuck at its `true`
+  // default for a form that starts with blank required fields (e.g. Create).
   const setFormRef = (node: HTMLFormElement | null) => {
     formRef.current = node;
     if (node) setIsValid(node.checkValidity());
@@ -50,6 +55,9 @@ export const useForm = <T extends object>(
   const handleSubmit = (onValid: (values: T) => void) => {
     return (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
+      // No manual checkValidity() re-check here: the browser already runs
+      // its own constraint validation before `submit` is even dispatched -
+      // if any control were invalid, this handler would never be called.
       onValid(values);
     };
   };
@@ -65,5 +73,6 @@ export const useForm = <T extends object>(
     },
     handleSubmit,
     reset,
+    // revalidate: handleFormChange,
   };
 };
