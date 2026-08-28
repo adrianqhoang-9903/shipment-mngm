@@ -462,7 +462,7 @@
       "label": "EWR-581-250525-5",
       "status": "DELIVERED",
       "arrival_date": "2026-08-24T14:35:31.349Z",
-      "delivery_by_date": "2026-08-26T14:35:31.349Z",
+      "delivery_by_date": "2026-08-26T00:00:00.000Z",
       "eta": "2026-08-25T16:35:31.349Z",
       "warehouse_id": "581",
       "assignment_id": "as_007",
@@ -611,19 +611,6 @@
       "assignment_id": "as_033",
       "lat": 32.88884414931137,
       "lng": -96.7207556143624
-    },
-    {
-      "id": "shp_017",
-      "client_name": "CargoTrans",
-      "label": "JFK-581-250527-17",
-      "status": "DELIVERED",
-      "arrival_date": "2026-08-19T14:35:31.349Z",
-      "delivery_by_date": "2026-08-21T14:35:31.349Z",
-      "eta": "2026-08-20T19:35:31.349Z",
-      "warehouse_id": "581",
-      "assignment_id": "as_006",
-      "lat": 32.59187409045849,
-      "lng": -96.73297103741693
     },
     {
       "id": "shp_018",
@@ -13377,6 +13364,45 @@
       "assignment_id": "as_023",
       "lat": 32.870248323099226,
       "lng": -96.72072477831998
+    },
+    {
+      "client_name": "Samsung",
+      "label": "TEST SHIPMENT",
+      "status": "OPEN",
+      "arrival_date": "2026-08-28T00:00:00.000Z",
+      "delivery_by_date": "2026-11-12T00:00:00.000Z",
+      "eta": "2026-11-12T00:00:00.000Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 17.8,
+      "lng": -96.95,
+      "id": "TKvdk9XZrTg"
+    },
+    {
+      "client_name": "Logix",
+      "label": "TEST STUFF",
+      "status": "OPEN",
+      "arrival_date": "2026-08-28T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T00:00:00.000Z",
+      "eta": "2026-08-30T00:00:00.000Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 32.8,
+      "lng": -96.95,
+      "id": "h7RByXwptrg"
+    },
+    {
+      "client_name": "Sont",
+      "label": "testest",
+      "status": "OPEN",
+      "arrival_date": "2026-08-28T00:00:00.000Z",
+      "delivery_by_date": "2026-08-28T00:00:00.000Z",
+      "eta": "2026-08-28T00:00:00.000Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 31,
+      "lng": 32,
+      "id": "JkSmtv1Dr9I"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

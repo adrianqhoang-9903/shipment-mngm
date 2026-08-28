@@ -1,4 +1,10 @@
-import { useState, type ChangeEvent, type FocusEvent, type FormEvent } from "react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type FormEvent,
+} from "react";
 import styles from "./FormFields.module.css";
 
 interface TextFieldProps {
@@ -12,6 +18,7 @@ interface TextFieldProps {
   max?: number | string;
   required?: boolean;
   validate?: (value: string) => string;
+  placeholder?: string;
 }
 
 const TextField = ({
@@ -25,8 +32,16 @@ const TextField = ({
   max,
   required,
   validate,
+  placeholder,
 }: TextFieldProps) => {
   const [errorMessage, setErrorMessage] = useState("");
+  // :user-invalid only lights up once the value has actually been changed
+  // and then blurred (or a submit was attempted) - merely focusing a
+  // blank field and leaving it again was never a "change" as far as the
+  // spec is concerned. handleBlur used to show the message unconditionally
+  // on any blur, which disagreed with the border in exactly that case -
+  // this mirrors the same gate so the two can't say different things.
+  const hasChangedRef = useRef(false);
 
   const applyValidation = (
     event: ChangeEvent<HTMLInputElement> | FocusEvent<HTMLInputElement>,
@@ -37,6 +52,7 @@ const TextField = ({
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    hasChangedRef.current = true;
     applyValidation(event);
     onChange(event.target.value);
     if (errorMessage) {
@@ -46,7 +62,9 @@ const TextField = ({
 
   const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
     applyValidation(event);
-    setErrorMessage(event.target.validationMessage);
+    if (hasChangedRef.current) {
+      setErrorMessage(event.target.validationMessage);
+    }
   };
 
   // Suppresses the browser's own validation bubble on a blocked submit
@@ -59,7 +77,7 @@ const TextField = ({
   // but would otherwise show no explanatory text without this.
   const handleInvalid = (event: FormEvent<HTMLInputElement>) => {
     event.preventDefault();
-    // setErrorMessage(event.currentTarget.validationMessage);
+    setErrorMessage(event.currentTarget.validationMessage);
   };
 
   return (
@@ -77,6 +95,7 @@ const TextField = ({
           min={min}
           max={max}
           required={required}
+          placeholder={placeholder}
           onChange={handleChange}
           onBlur={handleBlur}
           onInvalid={handleInvalid}

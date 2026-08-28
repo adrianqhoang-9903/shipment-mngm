@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchShipmentById } from "../../../services/shipments";
-import ShipmentEditForm from "./ShipmentEditForm";
+import EditShipmentForm from "./EditShipmentForm";
 import type { Shipment } from "../../../types";
 import styles from "./index.module.css";
-import ShipmentLocationMap from "./ShipmentLocationMap";
+import ShipmentLocationMap from "../../LocationMap/ShipmentLocationMap";
 
 interface ShipmentDetailsProps {
   selectedId: string | undefined;
@@ -12,7 +12,11 @@ interface ShipmentDetailsProps {
   refetchList: () => void;
 }
 
-const ShipmentDetails = ({ selectedId, patchShipment, refetchList }: ShipmentDetailsProps) => {
+const ShipmentDetails = ({
+  selectedId,
+  patchShipment,
+  refetchList,
+}: ShipmentDetailsProps) => {
   const navigate = useNavigate();
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +26,8 @@ const ShipmentDetails = ({ selectedId, patchShipment, refetchList }: ShipmentDet
     const statusChanged = shipment?.status !== savedShipment.status;
     setShipment(savedShipment);
 
-    if (statusChanged) { // possibly stale list
+    if (statusChanged) {
+      // possibly stale list
       refetchList();
     } else {
       patchShipment(savedShipment);
@@ -84,13 +89,13 @@ const ShipmentDetails = ({ selectedId, patchShipment, refetchList }: ShipmentDet
 
   return (
     <div className={styles.shipmentDetails}>
-      <ShipmentEditForm
+      <EditShipmentForm
         key={shipment.id}
         shipment={shipment}
         onSaved={onShipmentSaved}
         onDeleted={onShipmentDeleted}
       />
-      <ShipmentLocationMap shipment={shipment} />
+      <ShipmentLocationMap lat={shipment.lat} lng={shipment.lng} />
     </div>
   );
 };

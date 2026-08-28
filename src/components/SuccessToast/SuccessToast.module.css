@@ -1,0 +1,21 @@
+.toast {
+  position: fixed;
+  /* The [popover] UA stylesheet ships its own `inset: 0` (plus
+     `margin: auto`) to center popovers by default, the same way <dialog>
+     centers itself. Only overriding bottom/right leaves its top/left: 0
+     still active, which over-constrains the box and can make `bottom`
+     lose out entirely - top/left need to be explicitly cleared too, not
+     just bottom/right added. */
+  inset: auto 1rem 1rem auto;
+  margin: 0;
+  min-width: 15rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--accent);
+  border-radius: 0.375rem;
+  background: var(--bg);
+  color: var(--text);
+  font-weight: bold;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  font-size: 0.9em;
+  text-align: left;
+}

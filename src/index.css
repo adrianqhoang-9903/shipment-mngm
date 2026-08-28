@@ -59,6 +59,18 @@ padding: 0;
 font: inherit;
 cursor: pointer;
 outline: inherit;
+transition: transform 0.1s ease;
+}
+
+/* One rule here covers every button in the app - this selector is global
+   (not a CSS Module class), so any button anywhere gets a pressed-looking
+   effect on click for free, no per-component styling needed. Excludes
+   :disabled so a non-interactive button doesn't look like it's reacting
+   to a click that can't actually happen. */
+button:active:not(:disabled),
+input[type="submit"]:active:not(:disabled),
+input[type="reset"]:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 select, input, button {

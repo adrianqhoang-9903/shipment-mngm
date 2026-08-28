@@ -1,17 +1,16 @@
-import { useState } from "react";
 import { useStatuses } from "../../../hooks/useStatuses";
 import type { UseShipmentsResult } from "../../../hooks/useShipments";
 import ShipmentSearch from "./ShipmentSearch";
 import ShipmentFilters from "./ShipmentFilters";
 import ShipmentTable from "./ShipmentTable";
 import Pagination from "./Pagination";
-import CreateShipmentDialog from "../CreateShipment/CreateShipmentDialog";
-import type { Shipment, ShipmentStatus } from "../../../types";
+import type { ShipmentStatus } from "../../../types";
 import styles from "./index.module.css";
 
 interface ShipmentListProps extends Omit<UseShipmentsResult, "patchShipment"> {
   selectedId: string | undefined;
   onSelectShipment: (id: string) => void;
+  openCreateShipment: () => void;
 }
 
 const ShipmentList = ({
@@ -26,9 +25,10 @@ const ShipmentList = ({
   hasNextPage,
   refetch,
   onSelectShipment,
+  openCreateShipment
 }: ShipmentListProps) => {
   const { statuses, isLoading: statusesLoading } = useStatuses();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
 
   const handleSearch = (query: string) => {
     updateParams({ query, page: 1 });
@@ -42,15 +42,6 @@ const ShipmentList = ({
     updateParams({ page });
   };
 
-  const handleCreated = (_created: Shipment) => {
-    // A new shipment always starts OPEN - only worth refetching if that's
-    // the status currently being viewed, otherwise it wouldn't show up in
-    // this filtered list anyway.
-    if (params.status === "OPEN") {
-      refetch();
-    }
-  };
-
   return (
     <div className={styles.shipmentList}>
       <div className={styles.controls}>
@@ -61,15 +52,11 @@ const ShipmentList = ({
           onChange={handleStatusChange}
           disabled={statusesLoading}
         />
-        <button type="button" onClick={() => setIsCreateOpen(true)}>
+        <button type="button" onClick={openCreateShipment}>
           Create
         </button>
       </div>
-      <CreateShipmentDialog
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onCreated={handleCreated}
-      />
+
       {error && (
         <div className={styles.errorBanner}>
           <p className={styles.error}>{error}</p>

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useForm } from "../../../hooks/useForm";
-import { useShipmentAssignment } from "../../../hooks/useShipmentAssignment";
 import { deleteShipment, saveShipment } from "../../../services/shipments";
-import { toISODate, toDisplayDate } from "../../../utils/date";
+import { toISODate, toDisplayDate, toApiDateTime } from "../../../utils/date";
 import {
   LATITUDE_RANGE,
   LONGITUDE_RANGE,
@@ -10,12 +9,13 @@ import {
 } from "../../../utils/validation";
 import { getStatusDropdownOptions } from "../../../utils/statusTransitions";
 import { STATUS_LABELS } from "../../../constants";
+import SuccessToast from "../../SuccessToast/SuccessToast";
 import StaticField from "../../FormFields/StaticField";
 import TextField from "../../FormFields/TextField";
 import SelectField from "../../FormFields/SelectField";
+import AssignmentField from "./AssignmentField";
 import type { Shipment, ShipmentStatus } from "../../../types";
 import styles from "./index.module.css";
-import fieldStyles from "../FormFields/FormFields.module.css";
 
 interface FormValues {
   delivery_by_date: string;
@@ -41,7 +41,7 @@ const toApiPayload = (shipment: Shipment, values: FormValues): Shipment => {
 
   return {
     ...shipment,
-    delivery_by_date: `${values.delivery_by_date}T00:00:00.000Z`,
+    delivery_by_date: toApiDateTime(values.delivery_by_date),
     lat: Number(values.lat),
     lng: Number(values.lng),
     status: values.status,
@@ -53,30 +53,23 @@ const toApiPayload = (shipment: Shipment, values: FormValues): Shipment => {
   };
 };
 
-interface ShipmentEditFormProps {
+interface EditShipmentFormProps {
   shipment: Shipment;
   onSaved: (updates: Shipment) => void;
   onDeleted: () => void;
 }
 
-const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProps) => {
+const EditShipmentForm = ({
+  shipment,
+  onSaved,
+  onDeleted,
+}: EditShipmentFormProps) => {
   const { values, setField, isDirty, handleSubmit, reset } =
     useForm<FormValues>(toFormValues(shipment));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const {
-    assignments,
-    assignmentsLoading,
-    assignmentsError,
-    assignmentLabel,
-    fetchOpenAssignmentsOnce,
-  } = useShipmentAssignment(shipment);
-
-  const isAssigning =
-    shipment.status === "OPEN" && values.status === "IN_TRANSIT";
-  const isUnassigning =
-    shipment.status === "IN_TRANSIT" && values.status === "OPEN";
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const onValid = async (formValues: FormValues) => {
     if (!isDirty) return;
@@ -91,6 +84,7 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
       // README Assumptions for why).
       onSaved(saved);
       reset(toFormValues(saved));
+      setSuccessMessage("Shipment saved.");
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : "Failed to save shipment",
@@ -101,7 +95,11 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete shipment ${shipment.label}? This cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Delete shipment ${shipment.label}? This cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -120,17 +118,11 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
     }
   };
 
-  const handleDeliveryByDateChange = (value: string) => {
-    setField("delivery_by_date", value);
-  };
-
-  const handleLatChange = (value: string) => {
-    setField("lat", value);
-  };
-
-  const handleLngChange = (value: string) => {
-    setField("lng", value);
-  };
+  const handleFieldChange =
+    <K extends Exclude<keyof FormValues, "status">>(key: K) =>
+    (value: string) => {
+      setField(key, value);
+    };
 
   const handleStatusChange = (value: string) => {
     const status = value as ShipmentStatus;
@@ -138,14 +130,7 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
 
     if (status !== "IN_TRANSIT") {
       setField("assignment_id", "");
-      return;
     }
-
-    fetchOpenAssignmentsOnce();
-  };
-
-  const handleAssignmentChange = (value: string) => {
-    setField("assignment_id", value);
   };
 
   const statusOptions = getStatusDropdownOptions(shipment.status).map(
@@ -154,13 +139,6 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
       label: STATUS_LABELS[status],
     }),
   );
-
-  const assignmentOptions = assignments
-    .filter((assignment) => assignment.clients.includes(shipment.client_name))
-    .map((assignment) => ({
-      value: assignment.id,
-      label: `${assignment.label} (${assignment.clients.join(", ")})`,
-    }));
 
   return (
     <form className={styles.shipmentDetails} onSubmit={handleSubmit(onValid)}>
@@ -183,52 +161,24 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
         label="Delivery By"
         type="date"
         value={values.delivery_by_date}
-        onChange={handleDeliveryByDateChange}
+        onChange={handleFieldChange("delivery_by_date")}
         min={toISODate(shipment.arrival_date)}
         required
       />
-      <StaticField label="Warehouse" value={shipment.warehouse_id} />
-      {shipment.status === "OPEN" ? (
-        <SelectField
-          name="assignment_id"
-          label="Assignment"
-          value={values.assignment_id}
-          options={assignmentOptions}
-          onChange={handleAssignmentChange}
-          placeholder={
-            !isAssigning
-              ? "—"
-              : assignmentsLoading
-                ? "Loading assignments..."
-                : assignmentsError
-                  ? "Failed to load assignments"
-                  : assignmentOptions.length === 0
-                    ? "No assignments for this client"
-                    : "Select an assignment..."
-          }
-          disabled={assignmentsLoading || !isAssigning}
-          required={isAssigning}
-        />
-      ) : (
-        <StaticField
-          label="Assignment"
-          value={
-            shipment.assignment_id ? (assignmentLabel ?? "Loading...") : "—"
-          }
-        />
-      )}
-      {isUnassigning && (
-        <p className={fieldStyles.hint}>
-          Reverting to Open will clear this shipment&rsquo;s assignment.
-        </p>
-      )}
+      <StaticField label="Warehouse ID" value={shipment.warehouse_id} />
+      <AssignmentField
+        shipment={shipment}
+        status={values.status}
+        assignmentId={values.assignment_id}
+        onAssignmentIdChange={handleFieldChange("assignment_id")}
+      />
       <TextField
         name="lat"
         label="Latitude"
         type="text"
         inputMode="decimal"
         value={values.lat}
-        onChange={handleLatChange}
+        onChange={handleFieldChange("lat")}
         validate={(value) => validateNumberInRange(value, LATITUDE_RANGE)}
         required
       />
@@ -238,7 +188,7 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
         type="text"
         inputMode="decimal"
         value={values.lng}
-        onChange={handleLngChange}
+        onChange={handleFieldChange("lng")}
         validate={(value) => validateNumberInRange(value, LONGITUDE_RANGE)}
         required
       />
@@ -256,8 +206,12 @@ const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProp
         </button>
       </div>
       {formError && <p className={styles.error}>{formError}</p>}
+      <SuccessToast
+        message={successMessage}
+        onDismiss={() => setSuccessMessage(null)}
+      />
     </form>
   );
 };
 
-export default ShipmentEditForm;
+export default EditShipmentForm;

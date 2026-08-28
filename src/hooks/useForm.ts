@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { SubmitEvent } from "react";
+import { useRef, useState } from "react";
+import type { RefObject, SubmitEvent } from "react";
 
 interface UseFormResult<T> {
   values: T;
@@ -8,12 +8,16 @@ interface UseFormResult<T> {
   handleSubmit: (
     onValid: (values: T) => void,
   ) => (event: SubmitEvent<HTMLFormElement>) => void;
+  formProps: {
+    ref: RefObject<HTMLFormElement | null>;
+  };
   reset: (newValues: T) => void;
 }
 
 export const useForm = <T extends object>(
   initialValues: T,
 ): UseFormResult<T> => {
+  const formRef = useRef<HTMLFormElement>(null);
   const [baseline, setBaseline] = useState<T>(initialValues);
   const [values, setValues] = useState<T>(initialValues);
 
@@ -27,19 +31,11 @@ export const useForm = <T extends object>(
   );
 
   const reset = (newValues: T) => {
+    formRef.current?.reset();
     setBaseline(newValues);
     setValues(newValues);
   };
 
-  // No isValid/checkValidity() tracking here at all, and no ref to the
-  // form element either - nothing needs one. The Save button isn't
-  // preemptively disabled for content reasons at all (only isSaving, in
-  // the consuming component); the browser's own constraint validation
-  // still runs before `submit` fires on a real click, and an attempted
-  // submission counts as "interaction" for every control per spec, so
-  // :user-invalid styling lights up everything wrong the moment someone
-  // actually tries to save - no JS needs to know the form's validity
-  // ahead of time to make that work.
   const handleSubmit = (onValid: (values: T) => void) => {
     return (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -52,6 +48,9 @@ export const useForm = <T extends object>(
     setField,
     isDirty,
     handleSubmit,
+    formProps: {
+      ref: formRef,
+    },
     reset,
   };
 };

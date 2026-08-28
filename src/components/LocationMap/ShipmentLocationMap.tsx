@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Shipment } from "../../../types";
 import styles from "./ShipmentLocationMap.module.css";
 
 interface ShipmentLocationMapProps {
-  shipment: Shipment;
+  lat: number;
+  lng: number;
+  height?: string;
+  width?: string;
 }
 
 const RecenterOnChange = ({ lat, lng }: { lat: number; lng: number }) => {
@@ -18,14 +20,19 @@ const RecenterOnChange = ({ lat, lng }: { lat: number; lng: number }) => {
   return null;
 };
 
-const ShipmentLocationMap = ({ shipment }: ShipmentLocationMapProps) => {
-  const { lat, lng } = shipment;
+const ShipmentLocationMap = ({
+  lat,
+  lng,
+  height = "400px",
+  width = "100%",
+}: ShipmentLocationMapProps) => {
   return (
     <MapContainer
       center={[lat, lng]}
       zoom={13}
       scrollWheelZoom={false}
       className={styles.shipmentLocationMap}
+      style={{ height, width }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
