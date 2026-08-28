@@ -3,19 +3,18 @@ import { STATUS_LABELS } from "../../../constants";
 import type { ShipmentStatus } from "../../../types";
 import styles from "./ShipmentFilters.module.css";
 
+// The statuses that exist are a fixed, closed set - not server-fetched. The
+// mock backend's /statuses endpoint returns an unlabeled 1:1 mirror of this
+// same enum (no labels, no transition rules), so it carries no information
+// this list doesn't already need to hardcode anyway (see README Assumptions).
+const STATUSES = Object.keys(STATUS_LABELS) as ShipmentStatus[];
+
 interface ShipmentFiltersProps {
-  statuses: ShipmentStatus[];
   value: ShipmentStatus;
   onChange: (status: ShipmentStatus) => void;
-  disabled?: boolean;
 }
 
-const ShipmentFilters = ({
-  statuses,
-  value,
-  onChange,
-  disabled,
-}: ShipmentFiltersProps) => {
+const ShipmentFilters = ({ value, onChange }: ShipmentFiltersProps) => {
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onChange(event.target.value as ShipmentStatus);
   };
@@ -23,13 +22,8 @@ const ShipmentFilters = ({
   return (
     <div className={styles.filters}>
       <label htmlFor="status-filter">Status</label>
-      <select
-        id="status-filter"
-        value={value}
-        onChange={handleChange}
-        disabled={disabled || statuses.length === 0}
-      >
-        {statuses.map((status) => (
+      <select id="status-filter" value={value} onChange={handleChange}>
+        {STATUSES.map((status) => (
           <option key={status} value={status}>
             {STATUS_LABELS[status]}
           </option>

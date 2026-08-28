@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchAssignmentById, fetchOpenAssignments } from "../../../services/assignments";
 import SelectField from "../../FormFields/SelectField";
 import StaticField from "../../FormFields/StaticField";
@@ -24,15 +24,10 @@ const AssignmentField = ({
     null,
   );
   const [assignmentLabel, setAssignmentLabel] = useState<string | null>(null);
-  const assignmentsAbortRef = useRef<AbortController | null>(null);
 
   const isAssigning = shipment.status === "OPEN" && status === "IN_TRANSIT";
   const isUnassigning =
     shipment.status === "IN_TRANSIT" && status === "OPEN";
-
-  useEffect(() => {
-    return () => assignmentsAbortRef.current?.abort();
-  }, []);
 
   useEffect(() => {
     setAssignmentLabel(null);
@@ -49,23 +44,12 @@ const AssignmentField = ({
     return () => controller.abort();
   }, [shipment.assignment_id]);
 
-  // Fetch the open-assignment options once, the moment the in-progress edit
-  // actually needs them (status flipped to IN_TRANSIT) - guarded so
-  // re-renders while already assigning don't refetch.
   useEffect(() => {
-    if (
-      !isAssigning ||
-      shipment.status !== "OPEN" ||
-      assignments.length > 0 ||
-      assignmentsLoading
-    ) {
-      return;
-    }
+    if (!isAssigning) return;
 
+    const controller = new AbortController();
     setAssignmentsLoading(true);
     setAssignmentsError(null);
-    const controller = new AbortController();
-    assignmentsAbortRef.current = controller;
     fetchOpenAssignments(controller.signal)
       .then(setAssignments)
       .catch((err) => {
@@ -77,7 +61,8 @@ const AssignmentField = ({
       .finally(() => {
         if (!controller.signal.aborted) setAssignmentsLoading(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => controller.abort();
   }, [isAssigning]);
 
   const assignmentOptions = assignments

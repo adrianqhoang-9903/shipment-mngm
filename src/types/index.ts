@@ -14,10 +14,6 @@ export interface Shipment {
   lng: number;
 }
 
-export interface StatusOption {
-  id: ShipmentStatus;
-}
-
 export type AssignmentStatus = "OPEN" | "COMPLETED";
 
 export interface Assignment {

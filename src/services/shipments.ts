@@ -4,7 +4,6 @@ import type {
   Shipment,
   ShipmentListQuery,
   ShipmentStatus,
-  StatusOption,
 } from "../types";
 
 export const buildWhere = (status: ShipmentStatus, query: string) => {
@@ -65,13 +64,4 @@ export const createShipment = async (
 
 export const deleteShipment = async (id: string): Promise<void> => {
   await httpClient.delete(`/shipments/${id}`);
-};
-
-export const fetchStatuses = async (
-  signal?: AbortSignal,
-): Promise<StatusOption[]> => {
-  const { data } = await httpClient.get<StatusOption[]>("/statuses", {
-    signal,
-  });
-  return data;
 };
