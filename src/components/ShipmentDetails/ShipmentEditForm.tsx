@@ -69,6 +69,9 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
   const [assignmentLabel, setAssignmentLabel] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [assignmentsError, setAssignmentsError] = useState<string | null>(
+    null,
+  );
   const assignmentsAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -144,14 +147,16 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
       !assignmentsLoading
     ) {
       setAssignmentsLoading(true);
+      setAssignmentsError(null);
       const controller = new AbortController();
       assignmentsAbortRef.current = controller;
       fetchOpenAssignments(controller.signal)
         .then(setAssignments)
-        .catch(() => {
+        .catch((err) => {
           if (controller.signal.aborted) return;
-          // Leave the list empty - the select just shows no options rather
-          // than blocking the rest of the form.
+          setAssignmentsError(
+            err instanceof Error ? err.message : "Failed to load assignments",
+          );
         })
         .finally(() => {
           if (!controller.signal.aborted) setAssignmentsLoading(false);
@@ -170,10 +175,18 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
     }),
   );
 
-  const assignmentOptions = assignments.map((assignment) => ({
-    value: assignment.id,
-    label: `${assignment.label} (${assignment.clients.join(", ")})`,
-  }));
+  // Only assignments already grouping this shipment's client - an
+  // assignment is a route for a specific set of clients (per its own
+  // `clients` field), so one that doesn't include this shipment's client
+  // isn't a sensible target. Filtered here rather than in `assignments`
+  // itself, so the "have we fetched yet" guard in handleStatusChange stays
+  // correct even when the client-filtered result is empty.
+  const assignmentOptions = assignments
+    .filter((assignment) => assignment.clients.includes(shipment.client_name))
+    .map((assignment) => ({
+      value: assignment.id,
+      label: `${assignment.label} (${assignment.clients.join(", ")})`,
+    }));
 
   return (
     <form className={styles.shipmentDetails} onSubmit={handleSubmit(onValid)}>
@@ -213,7 +226,11 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
               ? "—"
               : assignmentsLoading
                 ? "Loading assignments..."
-                : "Select an assignment..."
+                : assignmentsError
+                  ? "Failed to load assignments"
+                  : assignmentOptions.length === 0
+                    ? "No assignments for this client"
+                    : "Select an assignment..."
           }
           disabled={assignmentsLoading || !isAssigning}
           required={isAssigning}
