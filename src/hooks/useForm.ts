@@ -1,15 +1,10 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { SubmitEvent } from "react";
 
 interface UseFormResult<T> {
   values: T;
   setField: <K extends keyof T>(key: K, value: T[K]) => void;
   isDirty: boolean;
-  isValid: boolean;
-  formProps: {
-    ref: (node: HTMLFormElement | null) => void;
-    onChange: () => void;
-  };
   handleSubmit: (
     onValid: (values: T) => void,
   ) => (event: SubmitEvent<HTMLFormElement>) => void;
@@ -21,8 +16,6 @@ export const useForm = <T extends object>(
 ): UseFormResult<T> => {
   const [baseline, setBaseline] = useState<T>(initialValues);
   const [values, setValues] = useState<T>(initialValues);
-  const [isValid, setIsValid] = useState(true);
-  const formRef = useRef<HTMLFormElement>(null);
 
   const setField = <K extends keyof T>(key: K, value: T[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -38,26 +31,18 @@ export const useForm = <T extends object>(
     setValues(newValues);
   };
 
-  const handleFormChange = () => {
-    setIsValid(formRef.current?.checkValidity() ?? true);
-  };
-
-  // Callback ref instead of a plain RefObject: it fires synchronously at
-  // mount time (commit phase, before paint), so the initial isValid check
-  // runs as soon as the form's DOM actually exists - no separate mount-only
-  // useEffect needed, and no window where isValid is stuck at its `true`
-  // default for a form that starts with blank required fields (e.g. Create).
-  const setFormRef = (node: HTMLFormElement | null) => {
-    formRef.current = node;
-    if (node) setIsValid(node.checkValidity());
-  };
-
+  // No isValid/checkValidity() tracking here at all, and no ref to the
+  // form element either - nothing needs one. The Save button isn't
+  // preemptively disabled for content reasons at all (only isSaving, in
+  // the consuming component); the browser's own constraint validation
+  // still runs before `submit` fires on a real click, and an attempted
+  // submission counts as "interaction" for every control per spec, so
+  // :user-invalid styling lights up everything wrong the moment someone
+  // actually tries to save - no JS needs to know the form's validity
+  // ahead of time to make that work.
   const handleSubmit = (onValid: (values: T) => void) => {
     return (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
-      // No manual checkValidity() re-check here: the browser already runs
-      // its own constraint validation before `submit` is even dispatched -
-      // if any control were invalid, this handler would never be called.
       onValid(values);
     };
   };
@@ -66,13 +51,7 @@ export const useForm = <T extends object>(
     values,
     setField,
     isDirty,
-    isValid,
-    formProps: {
-      ref: setFormRef,
-      onChange: handleFormChange,
-    },
     handleSubmit,
     reset,
-    // revalidate: handleFormChange,
   };
 };

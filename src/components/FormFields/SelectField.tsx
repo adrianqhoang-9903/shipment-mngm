@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import styles from "./FormFields.module.css";
 
 interface SelectFieldOption {
@@ -27,8 +27,21 @@ const SelectField = ({
   disabled,
   required,
 }: SelectFieldProps) => {
+  const [errorMessage, setErrorMessage] = useState("");
+
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onChange(event.target.value);
+    if (errorMessage) {
+      setErrorMessage(event.target.validationMessage);
+    }
+  };
+
+  // Same as TextField: suppresses the native validation bubble on a
+  // blocked submit attempt, showing the same message in our own span
+  // instead so nothing is silently lost.
+  const handleInvalid = (event: FormEvent<HTMLSelectElement>) => {
+    event.preventDefault();
+    setErrorMessage(event.currentTarget.validationMessage);
   };
 
   return (
@@ -44,6 +57,7 @@ const SelectField = ({
           disabled={disabled}
           required={required}
           onChange={handleChange}
+          onInvalid={handleInvalid}
         >
           {placeholder && <option value="">{placeholder}</option>}
           {options.map((option) => (
@@ -52,6 +66,9 @@ const SelectField = ({
             </option>
           ))}
         </select>
+        {errorMessage && (
+          <span className={styles.errorMessage}>{errorMessage}</span>
+        )}
       </div>
     </div>
   );

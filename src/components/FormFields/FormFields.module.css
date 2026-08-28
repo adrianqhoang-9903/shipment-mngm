@@ -44,16 +44,24 @@
   color: var(--text);
 }
 
-/* Live off the browser's own constraint validity (min/max/required, or a
-   custom setCustomValidity() message) - updates continuously as the value
-   changes, no JS validity state needed for the border itself. */
-.field input:invalid,
-.field select:invalid {
+/* :user-invalid instead of plain :invalid - matches the same underlying
+   validity (min/max/required, or a custom setCustomValidity() message),
+   but only once the user has actually interacted with the control: either
+   changed-then-blurred it, or attempted to submit the form (an attempted
+   submission counts as interaction for every control per spec, not just
+   the one the browser autofocuses - so a Save click on a form with
+   several invalid fields lights all of them up together, not just the
+   first). A pristine, never-touched, never-submitted field never renders
+   as invalid no matter what it's currently holding - this matters for a
+   future Create form starting with several blank required fields, which
+   plain :invalid would show as an unbroken wall of red on first render. */
+.field input:user-invalid,
+.field select:user-invalid {
   border-color: var(--error, #b00020);
 }
 
-.field input:focus:invalid,
-.field select:focus:invalid {
+.field input:focus:user-invalid,
+.field select:focus:user-invalid {
   outline: 2px solid var(--error, #b00020);
   outline-offset: -2px;
 }

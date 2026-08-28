@@ -62,7 +62,7 @@ interface ShipmentEditFormProps {
 }
 
 const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
-  const { values, setField, isDirty, isValid, formProps, handleSubmit, reset } =
+  const { values, setField, isDirty, handleSubmit, reset } =
     useForm<FormValues>(toFormValues(shipment));
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -96,6 +96,8 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
   }, [shipment.assignment_id]);
 
   const onValid = async (formValues: FormValues) => {
+    if (!isDirty) return;
+
     setIsSaving(true);
     setSaveError(null);
 
@@ -174,11 +176,7 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
   }));
 
   return (
-    <form
-      {...formProps}
-      className={styles.shipmentDetails}
-      onSubmit={handleSubmit(onValid)}
-    >
+    <form className={styles.shipmentDetails} onSubmit={handleSubmit(onValid)}>
       <h2 className={styles.title}>{shipment.label}</h2>
       <StaticField label="Client" value={shipment.client_name} />
       <SelectField
@@ -203,7 +201,7 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
         required
       />
       <StaticField label="Warehouse" value={shipment.warehouse_id} />
-      {shipment.status === "OPEN" && isAssigning ? (
+      {shipment.status === "OPEN" ? (
         <SelectField
           name="assignment_id"
           label="Assignment"
@@ -211,12 +209,14 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
           options={assignmentOptions}
           onChange={handleAssignmentChange}
           placeholder={
-            assignmentsLoading
-              ? "Loading assignments..."
-              : "Select an assignment..."
+            !isAssigning
+              ? "—"
+              : assignmentsLoading
+                ? "Loading assignments..."
+                : "Select an assignment..."
           }
-          disabled={assignmentsLoading}
-          required
+          disabled={assignmentsLoading || !isAssigning}
+          required={isAssigning}
         />
       ) : (
         <StaticField
@@ -251,7 +251,7 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
         validate={(value) => validateNumberInRange(value, LONGITUDE_RANGE)}
         required
       />
-      <button type="submit" disabled={!isDirty || isSaving || !isValid}>
+      <button type="submit" disabled={isSaving}>
         {isSaving ? "Saving..." : "Save"}
       </button>
       {saveError && <p className={styles.error}>{saveError}</p>}
