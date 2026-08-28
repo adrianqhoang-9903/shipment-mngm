@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
-import type { Shipment } from "../../types";
-import { toDisplayDate } from "../../utils/date";
+import type { Shipment } from "../../../types";
+import { toDisplayDate } from "../../../utils/date";
 import styles from "./ShipmentItem.module.css";
 
 interface ShipmentItemProps {

@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
-import { STATUS_LABELS } from "../../constants";
-import type { ShipmentStatus } from "../../types";
+import { STATUS_LABELS } from "../../../constants";
+import type { ShipmentStatus } from "../../../types";
 import styles from "./ShipmentFilters.module.css";
 
 interface ShipmentFiltersProps {

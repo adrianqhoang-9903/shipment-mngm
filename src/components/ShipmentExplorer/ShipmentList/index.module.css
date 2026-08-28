@@ -10,9 +10,20 @@
 
 .controls {
   display: flex;
+  align-items: center;
   gap: 0.75rem;
   width: var(--content-width);
   flex-shrink: 0;
+}
+
+.controls > button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.25rem;
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .errorBanner {

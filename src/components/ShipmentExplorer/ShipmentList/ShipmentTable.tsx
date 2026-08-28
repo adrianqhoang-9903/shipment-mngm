@@ -1,4 +1,4 @@
-import type { Shipment } from "../../types";
+import type { Shipment } from "../../../types";
 import ShipmentItem from "./ShipmentItem";
 import styles from "./ShipmentTable.module.css";
 

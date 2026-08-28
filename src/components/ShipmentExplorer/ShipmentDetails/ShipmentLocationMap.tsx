@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Shipment } from "../../types";
+import type { Shipment } from "../../../types";
 import styles from "./ShipmentLocationMap.module.css";
 
 interface ShipmentLocationMapProps {

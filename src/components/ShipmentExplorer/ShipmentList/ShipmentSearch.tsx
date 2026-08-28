@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import debounce from "lodash/debounce";
-import { SEARCH_DEBOUNCE_MS } from "../../constants";
+import { SEARCH_DEBOUNCE_MS } from "../../../constants";
 import styles from "./ShipmentSearch.module.css";
 
 interface ShipmentSearchProps {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchShipmentById } from "../../services/shipments";
+import { fetchShipmentById } from "../../../services/shipments";
 import ShipmentEditForm from "./ShipmentEditForm";
-import type { Shipment } from "../../types";
+import type { Shipment } from "../../../types";
 import styles from "./index.module.css";
 import ShipmentLocationMap from "./ShipmentLocationMap";
 
