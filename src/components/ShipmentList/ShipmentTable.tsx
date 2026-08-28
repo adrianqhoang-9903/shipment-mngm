@@ -1,21 +1,20 @@
-import { useParams } from "react-router-dom";
 import type { Shipment } from "../../types";
 import ShipmentItem from "./ShipmentItem";
 import styles from "./ShipmentTable.module.css";
 
 interface ShipmentTableProps {
+  selectedId: string | undefined;
   shipments: Shipment[];
   isLoading: boolean;
   onSelectShipment: (id: string) => void;
 }
 
 const ShipmentTable = ({
+  selectedId,
   shipments,
   isLoading,
   onSelectShipment,
 }: ShipmentTableProps) => {
-  const {id: selectedId} = useParams();
-
 
   if (isLoading) {
     return (

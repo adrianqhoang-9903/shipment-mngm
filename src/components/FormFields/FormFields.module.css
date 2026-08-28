@@ -79,6 +79,15 @@
   color: rgba(0, 0, 0, 0.5);
 }
 
+/* <option> inherits `color` from its parent <select> by default, so the
+   gray above would otherwise carry into every row of the open dropdown
+   list too, not just the closed placeholder display. An explicit color on
+   the option itself always wins over an inherited one, regardless of
+   whatever state the select is in. */
+.field option {
+  color: var(--text);
+}
+
 .errorMessage {
   position: absolute;
   top: 100%;

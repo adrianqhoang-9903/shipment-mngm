@@ -59,7 +59,16 @@ const SelectField = ({
           onChange={handleChange}
           onInvalid={handleInvalid}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {/* disabled + hidden: shows as the placeholder in the closed
+              control when nothing's selected, but isn't a choosable entry
+              once the dropdown is actually open - native <select> has no
+              first-class placeholder concept, this is the standard
+              workaround for it. */}
+          {placeholder && (
+            <option value="" disabled hidden>
+              {placeholder}
+            </option>
+          )}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

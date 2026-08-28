@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useForm } from "../../hooks/useForm";
-import {
-  fetchAssignmentById,
-  fetchOpenAssignments,
-} from "../../services/assignments";
-import { saveShipment } from "../../services/shipments";
+import { useShipmentAssignment } from "../../hooks/useShipmentAssignment";
+import { deleteShipment, saveShipment } from "../../services/shipments";
 import { toISODate, toDisplayDate } from "../../utils/date";
 import {
   LATITUDE_RANGE,
@@ -16,7 +13,7 @@ import { STATUS_LABELS } from "../../constants";
 import StaticField from "../FormFields/StaticField";
 import TextField from "../FormFields/TextField";
 import SelectField from "../FormFields/SelectField";
-import type { Assignment, Shipment, ShipmentStatus } from "../../types";
+import type { Shipment, ShipmentStatus } from "../../types";
 import styles from "./index.module.css";
 import fieldStyles from "../FormFields/FormFields.module.css";
 
@@ -59,50 +56,33 @@ const toApiPayload = (shipment: Shipment, values: FormValues): Shipment => {
 interface ShipmentEditFormProps {
   shipment: Shipment;
   onSaved: (updates: Shipment) => void;
+  onDeleted: () => void;
 }
 
-const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
+const ShipmentEditForm = ({ shipment, onSaved, onDeleted }: ShipmentEditFormProps) => {
   const { values, setField, isDirty, handleSubmit, reset } =
     useForm<FormValues>(toFormValues(shipment));
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [assignmentLabel, setAssignmentLabel] = useState<string | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
-  const [assignmentsError, setAssignmentsError] = useState<string | null>(
-    null,
-  );
-  const assignmentsAbortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => assignmentsAbortRef.current?.abort();
-  }, []);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    assignments,
+    assignmentsLoading,
+    assignmentsError,
+    assignmentLabel,
+    fetchOpenAssignmentsOnce,
+  } = useShipmentAssignment(shipment);
 
   const isAssigning =
     shipment.status === "OPEN" && values.status === "IN_TRANSIT";
   const isUnassigning =
     shipment.status === "IN_TRANSIT" && values.status === "OPEN";
 
-  useEffect(() => {
-    setAssignmentLabel(null);
-    if (!shipment.assignment_id) return;
-
-    const controller = new AbortController();
-    fetchAssignmentById(shipment.assignment_id, controller.signal)
-      .then((assignment) => setAssignmentLabel(assignment.label))
-      .catch(() => {
-        // Fall back to the raw id in the render below - a lookup failure
-        // shouldn't block viewing the rest of the shipment.
-      });
-
-    return () => controller.abort();
-  }, [shipment.assignment_id]);
-
   const onValid = async (formValues: FormValues) => {
     if (!isDirty) return;
 
     setIsSaving(true);
-    setSaveError(null);
+    setFormError(null);
 
     try {
       const saved = await saveShipment(toApiPayload(shipment, formValues));
@@ -112,11 +92,31 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
       onSaved(saved);
       reset(toFormValues(saved));
     } catch (err) {
-      setSaveError(
+      setFormError(
         err instanceof Error ? err.message : "Failed to save shipment",
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete shipment ${shipment.label}? This cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setFormError(null);
+
+    try {
+      await deleteShipment(shipment.id);
+      onDeleted();
+    } catch (err) {
+      setFormError(
+        err instanceof Error ? err.message : "Failed to delete shipment",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -141,27 +141,7 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
       return;
     }
 
-    if (
-      shipment.status === "OPEN" &&
-      assignments.length === 0 &&
-      !assignmentsLoading
-    ) {
-      setAssignmentsLoading(true);
-      setAssignmentsError(null);
-      const controller = new AbortController();
-      assignmentsAbortRef.current = controller;
-      fetchOpenAssignments(controller.signal)
-        .then(setAssignments)
-        .catch((err) => {
-          if (controller.signal.aborted) return;
-          setAssignmentsError(
-            err instanceof Error ? err.message : "Failed to load assignments",
-          );
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setAssignmentsLoading(false);
-        });
-    }
+    fetchOpenAssignmentsOnce();
   };
 
   const handleAssignmentChange = (value: string) => {
@@ -175,12 +155,6 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
     }),
   );
 
-  // Only assignments already grouping this shipment's client - an
-  // assignment is a route for a specific set of clients (per its own
-  // `clients` field), so one that doesn't include this shipment's client
-  // isn't a sensible target. Filtered here rather than in `assignments`
-  // itself, so the "have we fetched yet" guard in handleStatusChange stays
-  // correct even when the client-filtered result is empty.
   const assignmentOptions = assignments
     .filter((assignment) => assignment.clients.includes(shipment.client_name))
     .map((assignment) => ({
@@ -268,10 +242,20 @@ const ShipmentEditForm = ({ shipment, onSaved }: ShipmentEditFormProps) => {
         validate={(value) => validateNumberInRange(value, LONGITUDE_RANGE)}
         required
       />
-      <button type="submit" disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save"}
-      </button>
-      {saveError && <p className={styles.error}>{saveError}</p>}
+      <div className={styles.actions}>
+        <button type="submit" disabled={isSaving || isDeleting}>
+          {isSaving ? "Saving..." : "Save"}
+        </button>
+        <button
+          type="button"
+          className={styles.deleteButton}
+          disabled={isSaving || isDeleting}
+          onClick={handleDelete}
+        >
+          {isDeleting ? "Deleting..." : "Delete"}
+        </button>
+      </div>
+      {formError && <p className={styles.error}>{formError}</p>}
     </form>
   );
 };

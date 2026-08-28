@@ -1133,19 +1133,6 @@
       "lng": -97.34161546822365
     },
     {
-      "id": "shp_057",
-      "client_name": "Samsung",
-      "label": "JFK-581-250527-57",
-      "status": "OPEN",
-      "arrival_date": "2026-08-19T14:35:31.349Z",
-      "delivery_by_date": "2026-08-21T14:35:31.349Z",
-      "eta": "2026-08-20T12:35:31.349Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.87202763522693,
-      "lng": -96.64462224033416
-    },
-    {
       "id": "shp_058",
       "client_name": "DHL",
       "label": "SFO-581-250528-58",
@@ -1365,19 +1352,6 @@
       "assignment_id": "as_019",
       "lat": 32.68263691039459,
       "lng": -96.85804693527847
-    },
-    {
-      "id": "shp_075",
-      "client_name": "Logix",
-      "label": "EWR-581-250525-75",
-      "status": "OPEN",
-      "arrival_date": "2026-08-24T14:35:31.349Z",
-      "delivery_by_date": "2026-08-26T14:35:31.349Z",
-      "eta": "2026-08-25T13:35:31.349Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.6730442567395,
-      "lng": -96.54624496154482
     },
     {
       "id": "shp_076",

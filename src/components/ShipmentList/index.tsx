@@ -8,10 +8,12 @@ import type { ShipmentStatus } from "../../types";
 import styles from "./index.module.css";
 
 interface ShipmentListProps extends Omit<UseShipmentsResult, "patchShipment"> {
+  selectedId: string | undefined;
   onSelectShipment: (id: string) => void;
 }
 
 const ShipmentList = ({
+  selectedId,
   shipments,
   params,
   updateParams,
@@ -57,6 +59,7 @@ const ShipmentList = ({
       {!error && (
         <>
           <ShipmentTable
+            selectedId={selectedId}
             shipments={shipments}
             isLoading={isLoading}
             onSelectShipment={onSelectShipment}

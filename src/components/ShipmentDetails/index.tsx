@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { fetchShipmentById } from "../../services/shipments";
 import ShipmentEditForm from "./ShipmentEditForm";
 import type { Shipment } from "../../types";
@@ -7,12 +7,13 @@ import styles from "./index.module.css";
 import ShipmentLocationMap from "./ShipmentLocationMap";
 
 interface ShipmentDetailsProps {
+  selectedId: string | undefined;
   patchShipment: (updates: Shipment) => void;
   refetchList: () => void;
 }
 
-const ShipmentDetails = ({ patchShipment, refetchList }: ShipmentDetailsProps) => {
-  const { id } = useParams();
+const ShipmentDetails = ({ selectedId, patchShipment, refetchList }: ShipmentDetailsProps) => {
+  const navigate = useNavigate();
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,16 +29,21 @@ const ShipmentDetails = ({ patchShipment, refetchList }: ShipmentDetailsProps) =
     }
   };
 
+  const onShipmentDeleted = () => {
+    navigate("/shipments");
+    refetchList();
+  };
+
   useEffect(() => {
     setShipment(null);
     setError(null);
 
-    if (!id) return;
+    if (!selectedId) return;
 
     const controller = new AbortController();
     setIsLoading(true);
 
-    fetchShipmentById(id, controller.signal)
+    fetchShipmentById(selectedId, controller.signal)
       .then(setShipment)
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -50,9 +56,9 @@ const ShipmentDetails = ({ patchShipment, refetchList }: ShipmentDetailsProps) =
       });
 
     return () => controller.abort();
-  }, [id]);
+  }, [selectedId]);
 
-  if (!id) {
+  if (!selectedId) {
     return (
       <div className={styles.shipmentDetails}>
         <p className={styles.placeholder}>Select a shipment to view details.</p>
@@ -82,6 +88,7 @@ const ShipmentDetails = ({ patchShipment, refetchList }: ShipmentDetailsProps) =
         key={shipment.id}
         shipment={shipment}
         onSaved={onShipmentSaved}
+        onDeleted={onShipmentDeleted}
       />
       <ShipmentLocationMap shipment={shipment} />
     </div>

@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useShipments } from "../../hooks/useShipments";
 import ShipmentList from "../ShipmentList";
 import ShipmentDetails from "../ShipmentDetails";
 import styles from "./index.module.css";
 
 const ShipmentExplorer = () => {
+  const { id: selectedId } = useParams();
   const navigate = useNavigate();
   const {
     shipments,
@@ -26,6 +27,7 @@ const ShipmentExplorer = () => {
   return (
     <div className={styles.explorer}>
       <ShipmentList
+        selectedId={selectedId}
         shipments={shipments}
         params={params}
         updateParams={updateParams}
@@ -37,7 +39,11 @@ const ShipmentExplorer = () => {
         refetch={refetch}
         onSelectShipment={handleSelectShipment}
       />
-      <ShipmentDetails patchShipment={patchShipment} refetchList={refetch} />
+      <ShipmentDetails
+        selectedId={selectedId}
+        patchShipment={patchShipment}
+        refetchList={refetch}
+      />
     </div>
   );
 };

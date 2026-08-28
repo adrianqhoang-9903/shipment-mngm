@@ -40,3 +40,22 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-self: flex-end;
+  gap: 0.75rem;
+  margin: 1rem;
+}
+
+.actions button {
+  margin: 0;
+  align-self: auto;
+}
+
+.shipmentDetails button.deleteButton {
+  background: var(--bg);
+  color: var(--error, #b00020);
+  border-color: var(--error, #b00020);
+}

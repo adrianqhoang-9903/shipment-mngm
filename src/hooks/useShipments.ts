@@ -43,6 +43,12 @@ export const useShipments = () => {
 
     fetchShipments({ status, query, page, perPage }, controller.signal)
       .then((response) => {
+        // fetch again to clamp in case page has nothing, e.g. status transition & delete
+        if (response.pages > 0 && page > response.pages) {
+          setParams((prev) => ({ ...prev, page: response.pages }));
+          return;
+        }
+
         setShipments(response.data);
         setTotalPages(response.pages);
         setTotalItems(response.items);
