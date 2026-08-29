@@ -4,7 +4,7 @@ import ShipmentList from "./ShipmentList";
 import ShipmentDetails from "./ShipmentDetails";
 import styles from "./index.module.css";
 import CreateShipmentDialog from "./CreateShipment/CreateShipmentDialog";
-import SuccessToast from "../SuccessToast/SuccessToast";
+import { notify } from "../Toast/toastStore";
 import { useState } from "react";
 import type { Shipment } from "../../types";
 
@@ -23,7 +23,6 @@ const ShipmentExplorer = () => {
     patchShipment,
   } = useShipments();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSelectShipment = (id: string) => {
     navigate(`/shipments/${id}`);
@@ -34,7 +33,7 @@ const ShipmentExplorer = () => {
     if (params.status === "OPEN") {
       refetch();
     }
-    setSuccessMessage("Shipment created.");
+    notify("Shipment created.");
   };
 
   const openCreateShipment = () => {
@@ -67,10 +66,6 @@ const ShipmentExplorer = () => {
           onCreated={handleCreated}
         />
       )}
-      <SuccessToast
-        message={successMessage}
-        onDismiss={() => setSuccessMessage(null)}
-      />
     </div>
   );
 };

@@ -48,8 +48,3 @@
   color: var(--text);
   border-color: var(--border);
 }
-
-.error {
-  margin: 0 1rem 1rem;
-  color: var(--error, #b00020);
-}

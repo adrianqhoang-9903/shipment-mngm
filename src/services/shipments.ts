@@ -6,7 +6,7 @@ import type {
   ShipmentStatus,
 } from "../types";
 
-export const buildWhere = (status: ShipmentStatus, query: string) => {
+const buildWhere = (status: ShipmentStatus, query: string) => {
   const where: Record<string, unknown> = { status: { eq: status } };
   const trimmed = query.trim();
   if (trimmed) {

@@ -9,11 +9,11 @@ import {
 } from "../../../utils/validation";
 import { getStatusDropdownOptions } from "../../../utils/statusTransitions";
 import { STATUS_LABELS } from "../../../constants";
-import SuccessToast from "../../SuccessToast/SuccessToast";
 import StaticField from "../../FormFields/StaticField";
 import TextField from "../../FormFields/TextField";
 import SelectField from "../../FormFields/SelectField";
 import AssignmentField from "./AssignmentField";
+import { notify } from "../../Toast/toastStore";
 import type { Shipment, ShipmentStatus } from "../../../types";
 import styles from "./index.module.css";
 
@@ -48,19 +48,16 @@ const EditShipmentForm = ({
     useForm<FormValues>(() => toFormValues(shipment));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const onValid = async (formValues: FormValues) => {
     if (!isDirty) {
       // Nothing changed - skip the redundant PUT, but still confirm the
       // click did something, rather than silently doing nothing.
-      setSuccessMessage("Shipment saved.");
+      notify("Shipment saved.");
       return;
     }
 
     setIsSaving(true);
-    setFormError(null);
 
     try {
       const isAssigning =
@@ -85,10 +82,11 @@ const EditShipmentForm = ({
       // README Assumptions for why).
       onSaved(saved);
       reset(toFormValues(saved));
-      setSuccessMessage("Shipment saved.");
+      notify("Shipment saved.");
     } catch (err) {
-      setFormError(
+      notify(
         err instanceof Error ? err.message : "Failed to save shipment",
+        "error",
       );
     } finally {
       setIsSaving(false);
@@ -105,14 +103,14 @@ const EditShipmentForm = ({
     }
 
     setIsDeleting(true);
-    setFormError(null);
 
     try {
       await deleteShipment(shipment.id);
       onDeleted();
     } catch (err) {
-      setFormError(
+      notify(
         err instanceof Error ? err.message : "Failed to delete shipment",
+        "error",
       );
     } finally {
       setIsDeleting(false);
@@ -206,11 +204,6 @@ const EditShipmentForm = ({
           {isDeleting ? "Deleting..." : "Delete"}
         </button>
       </div>
-      {formError && <p className={styles.error}>{formError}</p>}
-      <SuccessToast
-        message={successMessage}
-        onDismiss={() => setSuccessMessage(null)}
-      />
     </form>
   );
 };

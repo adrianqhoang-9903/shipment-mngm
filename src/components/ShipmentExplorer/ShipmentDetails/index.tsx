@@ -81,9 +81,15 @@ const ShipmentDetails = ({
   }
 
   if (error || !shipment) {
+    // `!shipment` can't actually be reached with `error` falsy - the
+    // isLoading/id-mismatch guard above already covers that case - so
+    // `error` is always set once we're here. It stays in this condition
+    // anyway because it's what lets TS narrow `shipment` to non-null for
+    // the rest of the component; there's no separate "not found" message
+    // to fall back to.
     return (
       <div className={styles.shipmentDetails}>
-        <p className={styles.error}>{error ?? "Shipment not found."}</p>
+        <p className={styles.error}>{error}</p>
       </div>
     );
   }

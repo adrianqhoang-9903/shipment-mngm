@@ -8,6 +8,7 @@ import {
   validateNumberInRange,
 } from "../../../utils/validation";
 import TextField from "../../FormFields/TextField";
+import { notify } from "../../Toast/toastStore";
 import type { Shipment } from "../../../types";
 import styles from "./CreateShipmentDialog.module.css";
 
@@ -45,14 +46,12 @@ const CreateShipmentDialog = ({
   const { values, setField, handleSubmit } =
     useForm<CreateFormValues>(buildInitialValues);
   const [isCreating, setIsCreating] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => dialogRef.current?.showModal(), []);
 
   const onValid = async (formValues: CreateFormValues) => {
     setIsCreating(true);
-    setFormError(null);
 
     try {
       const deliveryBy = toApiDateTime(formValues.delivery_by_date);
@@ -71,8 +70,9 @@ const CreateShipmentDialog = ({
       onCreated(created);
       closeCreateShipment();
     } catch (err) {
-      setFormError(
+      notify(
         err instanceof Error ? err.message : "Failed to create shipment",
+        "error",
       );
     } finally {
       setIsCreating(false);
@@ -173,7 +173,6 @@ const CreateShipmentDialog = ({
             {isCreating ? "Creating..." : "Create"}
           </button>
         </div>
-        {formError && <p className={styles.error}>{formError}</p>}
       </form>
     </dialog>
   );

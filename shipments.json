@@ -655,13 +655,13 @@
       "id": "shp_021",
       "client_name": "Sony",
       "label": "LAX-581-250521-21",
-      "status": "OPEN",
+      "status": "IN_TRANSIT",
       "arrival_date": "2026-08-27T14:35:31.349Z",
-      "delivery_by_date": "2026-08-29T14:35:31.349Z",
+      "delivery_by_date": "2026-08-29T00:00:00.000Z",
       "eta": "2026-08-29T05:35:31.349Z",
       "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.76839450145607,
+      "assignment_id": "as_037",
+      "lat": 33.76839450145607,
       "lng": -96.87563959974877
     },
     {
@@ -1188,12 +1188,12 @@
       "id": "shp_063",
       "client_name": "Sony",
       "label": "SFO-581-250523-63",
-      "status": "OPEN",
+      "status": "IN_TRANSIT",
       "arrival_date": "2026-08-21T14:35:31.349Z",
-      "delivery_by_date": "2026-08-23T14:35:31.349Z",
+      "delivery_by_date": "2026-08-23T00:00:00.000Z",
       "eta": "2026-08-22T08:35:31.349Z",
       "warehouse_id": "581",
-      "assignment_id": null,
+      "assignment_id": "as_033",
       "lat": 33.00158196362945,
       "lng": -96.91708250834598
     },
@@ -1300,19 +1300,6 @@
       "assignment_id": "as_036",
       "lat": 32.702348438497964,
       "lng": -96.52985155240744
-    },
-    {
-      "id": "shp_072",
-      "client_name": "DHL",
-      "label": "JFK-581-250522-72",
-      "status": "OPEN",
-      "arrival_date": "2026-08-18T14:35:31.349Z",
-      "delivery_by_date": "2026-08-20T14:35:31.349Z",
-      "eta": "2026-08-20T03:35:31.349Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.768020640136406,
-      "lng": -97.12601031982818
     },
     {
       "id": "shp_073",

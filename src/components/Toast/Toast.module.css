@@ -19,3 +19,7 @@
   font-size: 0.9em;
   text-align: left;
 }
+
+.error {
+  border-color: var(--error, #b00020);
+}
