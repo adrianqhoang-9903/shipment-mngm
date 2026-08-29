@@ -13328,19 +13328,6 @@
       "lng": -96.615945861995
     },
     {
-      "id": "shp_982",
-      "client_name": "DHL",
-      "label": "JFK-581-250522-982",
-      "status": "IN_TRANSIT",
-      "arrival_date": "2026-08-26T14:14:53.400Z",
-      "delivery_by_date": "2026-08-28T14:14:53.400Z",
-      "eta": "2026-08-27T03:14:53.400Z",
-      "warehouse_id": "581",
-      "assignment_id": "as_003",
-      "lat": 32.83332077645664,
-      "lng": -96.70943060069263
-    },
-    {
       "id": "shp_983",
       "client_name": "CargoTrans",
       "label": "SFO-581-250523-983",

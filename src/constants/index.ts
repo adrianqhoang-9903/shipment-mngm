@@ -1,6 +1,6 @@
 import type { ShipmentListQuery, ShipmentStatus } from "../types";
 
-const DEFAULT_PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE = 50;
 export const REQUEST_TIMEOUT_MS = 8000;
 export const SEARCH_DEBOUNCE_MS = 500;
 

@@ -2,6 +2,7 @@ import styles from "./Pagination.module.css";
 
 interface PaginationProps {
   page: number;
+  perPage: number;
   totalPages: number;
   totalItems: number;
   isLoading: boolean;
@@ -10,6 +11,7 @@ interface PaginationProps {
 
 const Pagination = ({
   page,
+  perPage,
   totalPages,
   totalItems,
   isLoading,
@@ -27,13 +29,16 @@ const Pagination = ({
     return null;
   }
 
+  const firstItemIdx = perPage * (page - 1) + 1;
+  const lastItemIdx = Math.min(totalItems, perPage * page);
+
   return (
     <div className={styles.pagination}>
       <button onClick={handlePrev} disabled={isLoading || page <= 1}>
         Previous
       </button>
       <span className={styles.pageInfo}>
-        Page {page} of {totalPages} ({totalItems} shipments)
+        {firstItemIdx}–{lastItemIdx} of {totalItems} shipments
       </span>
       <button onClick={handleNext} disabled={isLoading || page >= totalPages}>
         Next

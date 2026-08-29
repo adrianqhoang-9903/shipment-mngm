@@ -64,6 +64,7 @@ const ShipmentList = ({
           />
           <Pagination
             page={params.page}
+            perPage={params.perPage}
             totalPages={totalPages}
             totalItems={totalItems}
             isLoading={isLoading}
