@@ -1,5 +1,7 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useShipments } from "../../hooks/useShipments";
+import { URL_PARAMS } from "../../constants";
+import { withParam } from "../../utils/shipmentListParams";
 import ShipmentList from "./ShipmentList";
 import ShipmentDetails from "./ShipmentDetails";
 import styles from "./index.module.css";
@@ -9,8 +11,8 @@ import { useState } from "react";
 import type { Shipment } from "../../types";
 
 const ShipmentExplorer = () => {
-  const { id: selectedId } = useParams();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get(URL_PARAMS.selected) ?? undefined;
   const {
     shipments,
     params,
@@ -23,12 +25,18 @@ const ShipmentExplorer = () => {
   } = useShipments();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const setSelectedShipment = (id: string | null) => {
+    setSearchParams((current) => withParam(current, URL_PARAMS.selected, id), {
+      replace: id === null,
+    });
+  };
+
   const handleSelectShipment = (id: string) => {
-    navigate(`/shipments/${id}`);
+    setSelectedShipment(id);
   };
 
   const handleCreated = (created: Shipment) => {
-    navigate(`/shipments/${created.id}`);
+    setSelectedShipment(created.id);
     if (params.status === "OPEN") {
       refetch();
     }
@@ -54,7 +62,11 @@ const ShipmentExplorer = () => {
         onSelectShipment={handleSelectShipment}
         openCreateShipment={openCreateShipment}
       />
-      <ShipmentDetails selectedId={selectedId} refetchList={refetch} />
+      <ShipmentDetails
+        selectedId={selectedId}
+        refetchList={refetch}
+        clearSelection={() => setSelectedShipment(null)}
+      />
       {isCreateOpen && (
         <CreateShipmentDialog
           closeCreateShipment={() => setIsCreateOpen(false)}

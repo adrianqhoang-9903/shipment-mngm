@@ -1,8 +1,7 @@
 # Shipment Management UI
 
 A two-panel shipment management tool: a paginated, searchable, status-filtered list
-on the left; a detail / edit panel on the right. Built for the Jitsu frontend
-exercise (Core + Stretch).
+on the left, and a detail / edit panel on the right.
 
 ## Running locally
 
@@ -19,7 +18,7 @@ npm install
 
 ### Run
 
-Two processes, in separate terminals:
+Start the following two processes in separate terminals:
 
 ```bash
 npx json-server shipments.json   # mock API on http://localhost:3000
@@ -29,16 +28,11 @@ npx json-server shipments.json   # mock API on http://localhost:3000
 npm run dev                      # app on http://localhost:5173
 ```
 
-`shipments.json` is committed, so the mock API has data immediately — you don't need
+`shipments.json` is committed, so the mock API has data immediately - you don't need
 to run the generator. To point the app at a different API URL, set
 `VITE_API_BASE_URL`.
 
-> The exercise PDF shows `json-server --watch shipments.json --port 3001`. This
-> project pins json-server v1, whose CLI dropped `--watch` (watching is the default)
-> and serves on port 3000 — which is the app's default API URL.
-
-To regenerate the sample data (random each run — counts, coordinates, and assignment
-links all change):
+To regenerate the sample data:
 
 ```bash
 node scripts/generate-data.cjs
@@ -52,8 +46,7 @@ node scripts/generate-data.cjs
 
 ## Tech stack
 
-- **React 19 + TypeScript + Vite**, with the **React Compiler** babel plugin handling
-  memoization (hence almost no manual `useMemo` / `useCallback`).
+- **React 19 + TypeScript + Vite**, with **React Compiler** handling memoization (hence almost no manual `useMemo` / `useCallback`).
 - **react-router-dom** — routing and URL-driven selection.
 - **axios** — one shared instance with a request timeout and a response
   interceptor that normalizes timeout, 404, and 5xx errors into one friendly
@@ -61,7 +54,7 @@ node scripts/generate-data.cjs
 - **react-leaflet / Leaflet** — the detail-panel map.
 - **lodash `debounce`** — the search input.
 - **CSS Modules** — no UI component library.
-- **No data-fetching library** and **no form library** — both hand-rolled; see
+- **No data-fetching library** and **no form library**; see
   Assumptions.
 
 ## Architecture
@@ -70,8 +63,8 @@ node scripts/generate-data.cjs
 lib/http  →  services/*  →  hooks  →  container components  →  FormFields/* (presentational)
 ```
 
-- `ShipmentExplorer` owns the list query state (`useShipments`), the create-dialog
-  flag, and reads the selected shipment id from the route. `ShipmentList` and
+- `ShipmentExplorer` owns the create-dialog flag and the selected shipment id (a
+  query param); `useShipments` owns the list query, also in the query string. `ShipmentList` and
   `ShipmentDetails` are handed everything they need as props.
 - `ShipmentDetails` fetches the selected shipment by id independently — it never
   reads a row out of the loaded list page, so list and detail stay decoupled (the
@@ -101,6 +94,29 @@ lib/http  →  services/*  →  hooks  →  container components  →  FormField
 - Leaflet map with the shipment's location pin
 - Create (modal dialog) and delete (detail panel, `confirm()`-guarded)
 
+## Performance
+
+Measured on the production build (`npm run build`) served locally, against the
+1,000-shipment fixture:
+
+| | |
+|---|---|
+| LCP | **778 ms** |
+| Bundle, total | **476 KB** (151 KB gzipped) |
+| — main chunk | 305 KB (99 KB gz) |
+| — map chunk, lazy | 150 KB (43 KB gz) |
+| — CSS | 21 KB (8 KB gz) |
+
+The map is a third of the bundle and is `React.lazy`'d, so the list view never pays
+for it — it loads on first shipment selection. Nothing else is code-split; at this
+size there's nothing else worth splitting.
+
+The list stays flat as the dataset grows because paging is server-side (25 per row
+page) and filtering and search are `_where` clauses, not client-side passes — the
+browser never holds more than one page regardless of whether the collection is 1,000
+rows or the 100k+ the brief describes. That is the main reason these numbers aren't
+really a function of dataset size.
+
 ## Assumptions & trade-offs
 
 Where the spec is ambiguous, a reasonable assumption was made and is recorded here.
@@ -119,11 +135,38 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
   prescribe a UI. Filtering to one status at a time (a dropdown) keeps each view to
   one paginated query; three columns or a merged list would each need their own
   pagination.
-- **Selection lives in the URL** (`/shipments/:id`), not component state — shareable,
-  survives refresh, and is the natural key for the detail fetch. An unmatched path
-  redirects to `/shipments` rather than rendering a dedicated 404 page: with only one
-  real section, a typo'd or stale link almost certainly meant the list, and there's
-  nowhere else a 404 could usefully send someone.
+- **The whole view is URL state, in one query string:**
+  `/shipments?selected=shp_042&status=IN_TRANSIT&q=sony&page=2`. Status filter,
+  search text, page, and the open shipment are all query params on a single
+  `/shipments` route, so a link restores exactly what the sender was looking at, and
+  a refresh doesn't reset anything.
+- **The selected shipment is a query param, not `/shipments/:id`.** That was the
+  first design, and path params are usually right for a resource — but they imply
+  the detail is a *page*, and here it isn't. It's a panel in a two-panel view that
+  never unmounts the list; you don't navigate *to* a shipment, you highlight one
+  inside the list view. Under that reading `selected` is view state of the same kind
+  as `status` and `q`, and giving it a different mechanism was the inconsistency.
+  Keeping one uniform scheme also removes a whole class of bug: with the path/query
+  split, every `navigate()` had to manually carry the filter query string forward or
+  silently drop the user's filters. Now a single merge-into-current write makes that
+  structural rather than something to remember. It also collapses `/shipments` and
+  `/shipments/:id` into one route, and extends cleanly to Extra Credit's assignment
+  page, which is *also* multi-panel (`?assignment=…&shipment=…`) rather than a
+  genuine page hierarchy.
+- **Defaults are stripped from the query string**, so an untouched view stays a bare
+  `/shipments` rather than `?status=OPEN&page=1`. A param appears only once it
+  carries information. `perPage` is never in the URL at all — nothing in the UI
+  changes it.
+- **Reads are defensive, because the URL is user-editable.** An unknown `status` or a
+  non-positive `page` falls back to the default instead of being trusted into a typed
+  field; the junk param is left in place rather than rewritten, and gets overwritten
+  the moment the user touches that control.
+- **Writes use `replace` where a Back press shouldn't undo one step at a time** — each
+  debounced keystroke, and the page-clamp correcting itself. Selecting a shipment and
+  changing status push normally, so Back deselects or restores the previous filter.
+- **An unmatched path** redirects to `/shipments` rather than rendering a dedicated
+  404 page: with only one real section, a typo'd or stale link almost certainly meant
+  the list, and there's nowhere else a 404 could usefully send someone.
 - **The sample data has no assignments** and the generator never sets
   `assignment_id`. `scripts/generate-data.cjs` was extended to create ~40
   assignments and link realistic `assignment_id`s onto `IN_TRANSIT` / `DELIVERED`
@@ -135,14 +178,37 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
   the transition rules belong server-side (ideally per-resource, e.g.
   `shipment.allowed_transitions`), with the client keeping a mirror for instant
   feedback.
-  - **Two business rules narrow the assignment picker, neither of them spec'd.** It
-  offers only `OPEN` assignments (a `COMPLETED` route has already finished) whose
-  `clients` include this shipment's `client_name` (an assignment serves a specific
-  client set). The client match is filtered in memory — json-server's `contains` is
-  string substring matching, not array membership — and the list is small and
-  fetched whole anyway. It's fetched only when a shipment is actually moved toward
-  `IN_TRANSIT`, and re-fetched on each such transition rather than cached, since an
-  assignment could close in between.
+- **One business rule narrows the assignment picker, and it isn't spec'd:** only
+  `OPEN` assignments are offered, since a `COMPLETED` route has already finished and
+  shouldn't accept new work. It's fetched only when a shipment is actually moved
+  toward `IN_TRANSIT`, and re-fetched on each such transition rather than cached,
+  since an assignment could close in between.
+- **`clients` is read as a record of who's on a route, not a whitelist of who may
+  join — reversed from an earlier reading.** An earlier version also filtered the
+  picker to assignments whose `clients` already contained the shipment's
+  `client_name`, on the assumption that an assignment serves a fixed client set.
+  That was an invented constraint, and two things contradict it. The spec calls the
+  field "a list of associated clients" — descriptive, not restrictive; it never says
+  *eligible*. And the sample data disagrees outright: 74% of its linked shipments had
+  a `client_name` absent from their own assignment's `clients`, which would make the
+  majority of the fixture invalid under the restrictive reading. The likelier
+  semantic is that assigning a shipment from a new client adds that client to the
+  list. The filter is gone, and `scripts/generate-data.cjs` now derives `clients`
+  from the shipments actually linked to each assignment — the same back-fill it
+  already did for `shipment_count` — so the fixture is self-consistent with the
+  reading rather than randomly populated.
+- **No response caching.** Re-selecting a shipment you just viewed refetches it, and
+  the assignment-label lookup repeats per detail view. Two things would address this
+  in a real system, and they are not the same thing. Most of it belongs to the
+  backend: `Cache-Control` / `ETag` / `Last-Modified` on single-resource GETs would
+  eliminate the repeated reads for free, with no client code at all — json-server
+  sends none of the three (verified against the running server). What HTTP caching
+  can't do is mutation invalidation, in-flight request dedup, or
+  stale-while-revalidate rendering; those need a client cache, and TanStack Query is
+  the obvious way to get all three rather than hand-rolling them. The paginated list
+  endpoint wouldn't be safely cacheable at the HTTP layer regardless, since creates,
+  deletes, and status changes reshuffle it — so a client cache is the only thing that
+  would help there.
 
 
 ### Dates
@@ -272,17 +338,17 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 None of these cost anything today; each is a choice made where the extending option
 was free.
 
-- **`react-router-dom`, for two routes.** Selection could have been component state
-  — it's one panel — but Extra Credit's `/assignments` page needs real routing, and
-  its three-panel drill-down is a nested-route problem. Putting selection in the URL
-  now means that page is a route to add, not a state model to redesign. It's also
-  the right call on its own merits (shareable, refresh-safe), which is why it's here
-  and not filed under speculative.
-- **`ShipmentDetails` takes `selectedId` as a prop and never calls `useParams`.**
-  Extra Credit's panel 3 is the same shipment detail, reached through a different
-  URL shape (`/assignments/:assignmentId/shipments/:shipmentId`). Reading the param
-  in `ShipmentExplorer` and passing it down keeps the panel reusable under any route
-  that supplies an id.
+- **`react-router-dom`, for one real route.** The whole view could have been
+  component state — it's a single page — but Extra Credit's `/assignments` page needs
+  real routing, and putting view state in the URL now means that page is a route to
+  add rather than a state model to redesign. It's also the right call on its own
+  merits (shareable, refresh-safe), which is why it's here and not filed under
+  speculative.
+- **`ShipmentDetails` takes `selectedId` as a prop and never reads the URL itself.**
+  Extra Credit's panel 3 is this same shipment detail, reached from an assignment
+  rather than the list. Reading the id in `ShipmentExplorer` and passing it down —
+  along with `clearSelection` for the post-delete case — keeps the panel reusable
+  wherever a shipment id comes from, without it knowing which param carries it.
 - **`FormFields/` knows nothing about shipments.** `TextField`, `SelectField`, and
   `StaticField` take `name` / `label` / `value` / `onChange` and no domain type, so
   an assignment form is composition, not new components. `useForm<T>` is generic for
@@ -313,6 +379,11 @@ unpick when built against imagined ones.
   fetch, the two assignment fetches) that it would mostly remove, along with the
   assignment re-fetch friction. Declined for now: every line has to be explainable
   live, and swapping it in would touch every fetch site under time pressure.
-- **Nested routes.** Selection is already URL-driven, but the routing is two flat
-  routes both rendering `ShipmentExplorer`. Nested routes with `<Outlet>` would be
-  cleaner and would extend to the Extra Credit assignment page's drill-down.
+- **A second route, and possibly nesting.** There's one real route today
+  (`/shipments`), which is all a single-view app needs — the detail panel is a query
+  param, not a page. Extra Credit's `/assignments` would be the first genuine second
+  route. Whether its three-panel drill-down wants nested routes with `<Outlet>` or
+  just more query params is an open question: the panels are all on screen at once,
+  which argues for query params by the same reasoning used here, while a distinct URL
+  per assignment argues for a path segment. Worth deciding deliberately rather than
+  by default.

@@ -1,23 +1,33 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { fetchShipments } from "../services/shipments";
-import { DEFAULT_SHIPMENT_LIST_QUERY } from "../constants";
-import type { Shipment, ShipmentListQuery } from "../types";
+import {
+  mergeListParams,
+  readListParams,
+  type ShipmentListUrlQuery,
+} from "../utils/shipmentListParams";
+import type { Shipment } from "../types";
 
 export const useShipments = () => {
-  const [params, setParams] = useState<ShipmentListQuery>(
-    DEFAULT_SHIPMENT_LIST_QUERY,
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [clampToPage, setClampToPage] = useState<number | null>(null);
 
+  const params = readListParams(searchParams);
   const { status, query, page, perPage } = params;
 
-  const updateParams = (partial: Partial<ShipmentListQuery>) => {
-    setParams((prev) => ({ ...prev, ...partial }));
+  const updateParams = (
+    partial: Partial<ShipmentListUrlQuery>,
+    { replace = false }: { replace?: boolean } = {},
+  ) => {
+    setSearchParams((current) => mergeListParams(current, partial), {
+      replace,
+    });
   };
 
   const refetch = () => {
@@ -32,9 +42,8 @@ export const useShipments = () => {
 
     fetchShipments({ status, query, page, perPage }, controller.signal)
       .then((response) => {
-        // fetch again to clamp in case page has nothing, e.g. status transition & delete
         if (response.pages > 0 && page > response.pages) {
-          setParams((prev) => ({ ...prev, page: response.pages }));
+          setClampToPage(response.pages);
           return;
         }
 
@@ -54,6 +63,15 @@ export const useShipments = () => {
 
     return () => controller.abort();
   }, [status, query, page, perPage, refreshKey]);
+
+  useEffect(() => {
+    if (clampToPage === null) return;
+
+    setClampToPage(null);
+    setSearchParams((current) => mergeListParams(current, { page: clampToPage }), {
+      replace: true,
+    });
+  }, [clampToPage, setSearchParams]);
 
   return {
     shipments,

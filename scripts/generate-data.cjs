@@ -17,21 +17,14 @@ const ASSIGNMENT_COUNT = 40;
 const assignments = [];
 for (let i = 1; i <= ASSIGNMENT_COUNT; i++) {
   const status = Math.random() < 0.6 ? "OPEN" : "COMPLETED";
-  const clientCount = 1 + Math.floor(Math.random() * 3);
-  const assignmentClients = [
-    ...new Set(
-      Array.from(
-        { length: clientCount },
-        () => clients[Math.floor(Math.random() * clients.length)],
-      ),
-    ),
-  ];
   assignments.push({
     id: `as_${String(i).padStart(3, "0")}`,
     label: `TX-${100 + i}`,
     status,
-    clients: assignmentClients,
-    shipment_count: 0, // back-filled below, once shipments exist
+    // Both back-filled below, once shipments exist and their links are
+    // settled - neither is meaningful to invent up front.
+    clients: [],
+    shipment_count: 0,
   });
 }
 const openAssignments = assignments.filter((a) => a.status === "OPEN");
@@ -73,15 +66,27 @@ for (let i = 1; i <= 1000; i++) {
 }
 
 // Now that every shipment's assignment_id is settled, back-fill the real
-// per-assignment shipment_count instead of leaving it a fabricated guess.
+// per-assignment shipment_count and clients instead of leaving them
+// fabricated. `clients` is the set of clients that actually have shipments on
+// the route - the spec calls it "a list of associated clients", i.e. a record
+// of who's on it, not a whitelist of who may join. Deriving it keeps the
+// sample data self-consistent with that reading.
 const countsByAssignment = {};
 for (const shipment of shipments) {
   if (!shipment.assignment_id) continue;
   countsByAssignment[shipment.assignment_id] =
     (countsByAssignment[shipment.assignment_id] ?? 0) + 1;
 }
+const clientsByAssignment = {};
+for (const shipment of shipments) {
+  if (!shipment.assignment_id) continue;
+  (clientsByAssignment[shipment.assignment_id] ??= new Set()).add(
+    shipment.client_name,
+  );
+}
 for (const assignment of assignments) {
   assignment.shipment_count = countsByAssignment[assignment.id] ?? 0;
+  assignment.clients = [...(clientsByAssignment[assignment.id] ?? [])];
 }
 
 const result = { statuses, assignments, shipments };

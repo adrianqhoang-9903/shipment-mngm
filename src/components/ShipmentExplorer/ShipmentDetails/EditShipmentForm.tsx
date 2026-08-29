@@ -33,6 +33,21 @@ const toFormValues = (shipment: Shipment): FormValues => ({
   assignment_id: shipment.assignment_id ?? "",
 });
 
+const resolveAssignmentId = (
+  shipment: Shipment,
+  values: FormValues,
+): string | null => {
+  const isAssigning =
+    shipment.status === "OPEN" && values.status === "IN_TRANSIT";
+  if (isAssigning) return values.assignment_id || null;
+
+  const isUnassigning =
+    shipment.status === "IN_TRANSIT" && values.status === "OPEN";
+  if (isUnassigning) return null;
+
+  return shipment.assignment_id ?? null;
+};
+
 interface EditShipmentFormProps {
   shipment: Shipment;
   onSaved: (updates: Shipment) => void;
@@ -51,8 +66,6 @@ const EditShipmentForm = ({
 
   const onValid = async (formValues: FormValues) => {
     if (!isDirty) {
-      // Nothing changed - skip the redundant PUT, but still confirm the
-      // click did something, rather than silently doing nothing.
       notify("Shipment saved.");
       return;
     }
@@ -60,22 +73,13 @@ const EditShipmentForm = ({
     setIsSaving(true);
 
     try {
-      const isAssigning =
-        shipment.status === "OPEN" && formValues.status === "IN_TRANSIT";
-      const isUnassigning =
-        shipment.status === "IN_TRANSIT" && formValues.status === "OPEN";
-
       const saved = await saveShipment({
         ...shipment,
         delivery_by_date: toApiDateTime(formValues.delivery_by_date),
         lat: Number(formValues.lat),
         lng: Number(formValues.lng),
         status: formValues.status,
-        assignment_id: isAssigning
-          ? formValues.assignment_id || null
-          : isUnassigning
-            ? null
-            : shipment.assignment_id,
+        assignment_id: resolveAssignmentId(shipment, formValues),
       });
       onSaved(saved);
       reset(toFormValues(saved));

@@ -10,6 +10,13 @@ export const STATUS_LABELS: Record<ShipmentStatus, string> = {
   DELIVERED: "Delivered",
 };
 
+export const URL_PARAMS = {
+  selected: "selected",
+  status: "status",
+  query: "q",
+  page: "page",
+} as const;
+
 export const DEFAULT_SHIPMENT_LIST_QUERY: ShipmentListQuery = {
   status: "OPEN",
   query: "",

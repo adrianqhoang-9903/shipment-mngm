@@ -27,8 +27,6 @@ const ShipmentItem = ({ shipment, isSelected, onSelect }: ShipmentItemProps) => 
       onClick={handleSelect}
       onKeyDown={handleKeyDown}
       tabIndex={0}
-      role="button"
-      aria-selected={isSelected}
     >
       <td>{shipment.client_name}</td>
       <td>{shipment.label}</td>

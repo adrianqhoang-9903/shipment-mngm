@@ -12,7 +12,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/shipments" replace />} />
           <Route path="/shipments" element={<ShipmentExplorer />} />
-          <Route path="/shipments/:id" element={<ShipmentExplorer />} />
           <Route path="*" element={<Navigate to="/shipments" replace />} />
         </Routes>
         <Toast />

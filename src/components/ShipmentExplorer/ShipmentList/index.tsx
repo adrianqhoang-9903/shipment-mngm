@@ -25,8 +25,9 @@ const ShipmentList = ({
   onSelectShipment,
   openCreateShipment
 }: ShipmentListProps) => {
+  // Replace, not push: a debounced keystroke shouldn't cost a Back press.
   const handleSearch = (query: string) => {
-    updateParams({ query, page: 1 });
+    updateParams({ query, page: 1 }, { replace: true });
   };
 
   const handleStatusChange = (status: ShipmentStatus) => {
@@ -40,7 +41,7 @@ const ShipmentList = ({
   return (
     <div className={styles.shipmentList}>
       <div className={styles.controls}>
-        <ShipmentSearch onSearch={handleSearch} />
+        <ShipmentSearch query={params.query} onSearch={handleSearch} />
         <ShipmentFilters value={params.status} onChange={handleStatusChange} />
         <button type="button" onClick={openCreateShipment}>
           Create

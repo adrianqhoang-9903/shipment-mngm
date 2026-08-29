@@ -12,6 +12,26 @@ interface AssignmentFieldProps {
   onAssignmentIdChange: (value: string) => void;
 }
 
+interface AssignmentPlaceholderState {
+  isAssigning: boolean;
+  isLoading: boolean;
+  hasError: boolean;
+  optionCount: number;
+}
+
+const assignmentPlaceholder = ({
+  isAssigning,
+  isLoading,
+  hasError,
+  optionCount,
+}: AssignmentPlaceholderState) => {
+  if (!isAssigning) return "—";
+  if (isLoading) return "Loading assignments...";
+  if (hasError) return "Failed to load assignments";
+  if (optionCount === 0) return "No open assignments available";
+  return "Select an assignment...";
+};
+
 const AssignmentField = ({
   shipment,
   status,
@@ -66,12 +86,18 @@ const AssignmentField = ({
     return () => controller.abort();
   }, [isAssigning]);
 
-  const assignmentOptions = assignments
-    .filter((assignment) => assignment.clients.includes(shipment.client_name))
-    .map((assignment) => ({
-      value: assignment.id,
-      label: `${assignment.label} (${assignment.clients.join(", ")})`,
-    }));
+  const assignmentOptions = assignments.map((assignment) => ({
+    value: assignment.id,
+    label: `${assignment.label} (${[...assignment.clients].sort().join(", ")})`,
+  }));
+
+  const placeholder = assignmentPlaceholder({
+    isAssigning,
+    isLoading: assignmentsLoading,
+    hasError: assignmentsError !== null,
+    optionCount: assignmentOptions.length,
+  });
+
 
   return (
     <div className={styles.hintWrapper}>
@@ -82,17 +108,7 @@ const AssignmentField = ({
           value={assignmentId}
           options={assignmentOptions}
           onChange={onAssignmentIdChange}
-          placeholder={
-            !isAssigning
-              ? "—"
-              : assignmentsLoading
-                ? "Loading assignments..."
-                : assignmentsError
-                  ? "Failed to load assignments"
-                  : assignmentOptions.length === 0
-                    ? "No assignments for this client"
-                    : "Select an assignment..."
-          }
+          placeholder={placeholder}
           disabled={assignmentsLoading || !isAssigning}
           required={isAssigning}
         />

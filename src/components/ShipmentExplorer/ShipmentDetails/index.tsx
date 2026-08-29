@@ -1,5 +1,4 @@
 import { lazy, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { fetchShipmentById } from "../../../services/shipments";
 import EditShipmentForm from "./EditShipmentForm";
 import type { Shipment } from "../../../types";
@@ -10,13 +9,14 @@ const ShipmentLocationMap = lazy(() => import("../../LocationMap/ShipmentLocatio
 interface ShipmentDetailsProps {
   selectedId: string | undefined;
   refetchList: () => void;
+  clearSelection: () => void;
 }
 
 const ShipmentDetails = ({
   selectedId,
   refetchList,
+  clearSelection,
 }: ShipmentDetailsProps) => {
-  const navigate = useNavigate();
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,18 +25,14 @@ const ShipmentDetails = ({
     const statusChanged = shipment?.status !== savedShipment.status;
     setShipment(savedShipment);
 
-    // Only a status change needs the list to do anything: it's filtered to
-    // one status, so the row may no longer belong in the current view (and
-    // the totals shift with it). Every other editable field - delivery date,
-    // lat, lng, assignment - is absent from the row, so the list has nothing
-    // to re-render for.
     if (statusChanged) {
       refetchList();
     }
   };
 
   const onShipmentDeleted = () => {
-    navigate("/shipments");
+    // The panel can't keep showing a shipment that no longer exists.
+    clearSelection();
     refetchList();
   };
 
