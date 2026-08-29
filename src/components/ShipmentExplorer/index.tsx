@@ -20,7 +20,6 @@ const ShipmentExplorer = () => {
     totalPages,
     totalItems,
     refetch,
-    patchShipment,
   } = useShipments();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -55,11 +54,7 @@ const ShipmentExplorer = () => {
         onSelectShipment={handleSelectShipment}
         openCreateShipment={openCreateShipment}
       />
-      <ShipmentDetails
-        selectedId={selectedId}
-        patchShipment={patchShipment}
-        refetchList={refetch}
-      />
+      <ShipmentDetails selectedId={selectedId} refetchList={refetch} />
       {isCreateOpen && (
         <CreateShipmentDialog
           closeCreateShipment={() => setIsCreateOpen(false)}

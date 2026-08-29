@@ -79,6 +79,8 @@ lib/http  →  services/*  →  hooks  →  container components  →  FormField
   view).
 - `useForm<T>` is a minimal values / dirty / submit container shared by the edit and
   create forms.
+- Layout/theme tokens live in `index.css`; every other component owns its own CSS
+  module. There's no app-level stylesheet beyond that.
 
 ## Features
 
@@ -105,15 +107,23 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 
 ### Data & domain
 
+- **Built for Core and Stretch; shaped so Extra Credit is additive, not a rewrite.**
+  Extra Credit isn't implemented — guessing at requirements no one asked for is
+  how you end up with abstractions that fit an imagined problem instead of a real
+  one. But the spec does describe that tier concretely, so where a decision had two
+  reasonable answers and one of them extended more cleanly, that's the one taken:
+  generic where the type genuinely varies, entity-agnostic where the component
+  genuinely doesn't care, and nothing built speculatively on top of that. What that
+  actually amounted to is listed under **Extra Credit seams** below.
 - **"Grouped by status" is read as a single-status filter.** The spec doesn't
   prescribe a UI. Filtering to one status at a time (a dropdown) keeps each view to
   one paginated query; three columns or a merged list would each need their own
   pagination.
 - **Selection lives in the URL** (`/shipments/:id`), not component state — shareable,
-  survives refresh, and is the natural key for the detail fetch.
-- **Search matches `label` OR `client_name`** by case-insensitive substring.
-  json-server v1 removed the `q=` param, so the query is built as a `_where` clause
-  using `contains`; with no search term it carries just the status filter.
+  survives refresh, and is the natural key for the detail fetch. An unmatched path
+  redirects to `/shipments` rather than rendering a dedicated 404 page: with only one
+  real section, a typo'd or stale link almost certainly meant the list, and there's
+  nowhere else a 404 could usefully send someone.
 - **The sample data has no assignments** and the generator never sets
   `assignment_id`. `scripts/generate-data.cjs` was extended to create ~40
   assignments and link realistic `assignment_id`s onto `IN_TRANSIT` / `DELIVERED`
@@ -125,6 +135,15 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
   the transition rules belong server-side (ideally per-resource, e.g.
   `shipment.allowed_transitions`), with the client keeping a mirror for instant
   feedback.
+  - **Two business rules narrow the assignment picker, neither of them spec'd.** It
+  offers only `OPEN` assignments (a `COMPLETED` route has already finished) whose
+  `clients` include this shipment's `client_name` (an assignment serves a specific
+  client set). The client match is filtered in memory — json-server's `contains` is
+  string substring matching, not array membership — and the list is small and
+  fetched whole anyway. It's fetched only when a shipment is actually moved toward
+  `IN_TRANSIT`, and re-fetched on each such transition rather than cached, since an
+  assignment could close in between.
+
 
 ### Dates
 
@@ -139,7 +158,7 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 ### Forms & validation
 
 - **Hand-rolled form state, no Formik / React Hook Form.** The editable surface is
-  small (3 fields in Edit, 7 in Create) and every decision needs to be explainable
+  small (5 fields in Edit, 7 in Create) and every decision needs to be explainable
   in the follow-up. `useForm` holds `values`, `isDirty`, and a `handleSubmit`
   wrapper.
 - **`lat` / `lng` are `type="text"` + `inputMode="decimal"`, not `type="number"`.**
@@ -154,65 +173,28 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 - **Validity is the browser's job; Save and Create are never pre-disabled for it.**
   The buttons disable only while a request is in flight. The browser's pre-submit
   constraint validation blocks a bad save using the per-field `setCustomValidity()`
-  messages. No form-level `isValid` is mirrored into JS — an earlier attempt to do
-  that for a disabled-button effect read stale (`checkValidity()` inside the same
-  event that flips a field's `required` sees the pre-commit DOM) and was removed
-  rather than patched.
-- **A pristine (unchanged) Edit save is a guarded no-op** — the submit handler
-  returns early, skipping a redundant `PUT`.
-- **`:user-invalid`, not `:invalid`, for the red-border style.** `:invalid` flags an
-  empty required field on mount — fine for Edit (fields start populated), a wall of
-  red for Create (fields start blank). `:user-invalid` matches the same validity but
-  only after the user has changed-and-blurred a field or attempted a submit (which
-  counts as interaction for every field), so a pristine form shows no red and a
-  blocked submit lights up every wrong field at once.
-- **The native validation bubble is suppressed** — `TextField` / `SelectField` call
-  `preventDefault()` on the `invalid` event and render `validationMessage` in their
-  own `<span>` for consistent styling. Constraint validation and the submit block
-  are unaffected; the browser's auto-focus of the first invalid field is likely
-  suppressed as a side effect of the same cancel.
-
-### Status transitions & assignments
-
-- **The status dropdown lists only the current status plus its valid targets**
-  (`OPEN → IN_TRANSIT`, `IN_TRANSIT → DELIVERED`, `IN_TRANSIT → OPEN`). `DELIVERED`
-  is terminal — its dropdown is a single disabled option. `IN_TRANSIT → OPEN` clears
-  `assignment_id` on save, with an inline note so it isn't a silent loss.
-- **`OPEN → IN_TRANSIT` requires an assignment.** Two inferred rules, not spec'd: the
-  picker lists only `OPEN` assignments (a `COMPLETED` route has finished), and only
-  those whose `clients` include the shipment's `client_name` (an assignment serves a
-  specific client set). The client filter runs in memory — json-server's `contains`
-  does string substring matching, not array membership (verified) — and the
-  assignments list is small and fetched whole anyway.
-- **Assignment options are fetched lazily and re-fetched each time.** An effect keyed
-  on the `OPEN → IN_TRANSIT` transition fires the request (not on every OPEN detail
-  view), aborting if the user navigates away first. Toggling the transition off and
-  on re-fetches rather than caching — rare in practice, and arguably more correct
-  since an assignment could close between toggles.
-- **The Assignment field is one slot.** `IN_TRANSIT` / `DELIVERED`: plain read-only
-  text (nothing in this app reassigns a non-OPEN shipment). `OPEN`: a single
-  `<select>`, enabled and `required` only while transitioning to `IN_TRANSIT`,
-  rather than a separate conditionally-shown "Assign to" field. It shows the
-  assignment's label (resolved via `GET /assignments/:id`), not the raw `as_0xx` id.
-- **`AssignmentField` is its own component** (state + fetch + JSX), taking
-  `{ shipment, status, assignmentId, onAssignmentIdChange }`. The cross-field
-  coupling is kept explicit rather than hidden: `status` is passed in as a prop, and
-  clearing `assignment_id` when the Status dropdown leaves `IN_TRANSIT` lives in the
-  parent form's `handleStatusChange`, not the field.
+  messages, so no form-level `isValid` is mirrored into JS.
 
 ### List ↔ detail consistency
 
-- **No optimistic list update.** The list's copy of a shipment is patched once,
-  after a save succeeds, with the server's response. An earlier
-  optimistic-patch-and-rollback was removed — none of the editable fields
-  (`delivery_by_date`, `lat`, `lng`) appear in the list row, so it was patching
-  something nothing displayed.
-- **A status-changing save re-fetches the whole list; other saves patch in place.**
-  A status change can move a row out of the current filter and changes `totalItems`
-  / `totalPages` — a local patch handles neither. Field edits can't move a row
-  between groups.
-- **A delete re-fetches the list** for the same reason, then navigates back to
-  `/shipments`.
+- **Only a status change touches the list; no other save updates it at all.** A
+  status change can move a row out of the current single-status filter and shifts
+  `totalItems` / `totalPages`, so it re-fetches. A delete re-fetches for the same
+  reason, then navigates back to `/shipments`. Everything else editable
+  (`delivery_by_date`, `lat`, `lng`, `assignment_id`) is absent from the row, so
+  there is nothing for the list to re-render.
+- **This went through two rounds of removal, both for the same reason.** First an
+  optimistic patch-and-rollback (patched on submit, reverted on failure), then the
+  post-save `patchShipment` that replaced it — each was keeping the list's copy of a
+  shipment in sync with fields the list has never displayed. The detail panel fetches
+  by id independently, so nothing else read that patched copy either. The strongest
+  case for keeping it was Extra Credit, whose panel-2 lists an assignment's shipments
+  beside a panel-3 detail, with a map plotting every shipment's coordinates — the one
+  place an edited `lat` / `lng` would show up in a sibling view. It still doesn't
+  apply: that list is an assignment's shipments, a different query in a different
+  hook, so it would need its own sync path and would never have called this one.
+  Keeping a function for a future feature that wouldn't use it is worse than the
+  stale-row risk of deleting it.
 - **The current page is clamped if it stops existing.** After any result-shrinking
   action, the list fetch detects `page > totalPages` in its response and re-requests
   the new last page.
@@ -222,51 +204,60 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 - **Create is a native `<dialog>`, not a reworked detail panel.** The detail panel's
   markup is shaped around Edit concerns (status / assignment machinery, read-only
   server fields). The dialog is conditionally mounted, so each open starts from a
-  fresh blank form; `showModal()` is called imperatively (native `<dialog>` gives
-  focus trapping, Escape-to-close, and backdrop rendering for free).
+  fresh blank form.
 - **Create collects 7 of the ~10 fields** (`label`, `client_name`, `warehouse_id`,
   `arrival_date`, `delivery_by_date`, `lat`, `lng`). `status` (`OPEN`) and
   `assignment_id` (`null`) are true-by-construction, not fields. `eta` is defaulted
   to `delivery_by_date` — the generator sets it to `arrival + random hours` with no
-  reproducible rule, and it's never surfaced here.
-- **`arrival_date` and `delivery_by_date` default to today; everything else starts
-  blank.** `warehouse_id`, `label`, and `client_name` are plain required text with
-  no pre-fill: `warehouse_id: "581"` and the `LAX-581-250521-6` label shape are
-  generator artifacts, not spec formats (the domain implies multiple warehouses). A
-  client dropdown (like the assignment picker) would beat free text, but there's no
-  client collection to query.
+  reproducible rule, and it's never surfaced here. The two dates default to today;
+  everything else starts blank. `warehouse_id` in particular isn't pre-filled to
+  `"581"` — every sample sharing that value is a generator artifact, not a fact
+  about where new shipments arrive.
 - **POST server-generates the `id`** — new shipments don't get the `shp_0xx` shape.
-- **Delete lives on the detail panel, behind `window.confirm()`.** Not a per-row
-  action — a row shows too little context to delete safely from, and deleting the
-  shipment you're currently viewing would strand the panel (from the detail view,
-  the app navigates away itself).
-- **Creating a shipment re-fetches the list only when the filter is `OPEN`** — a new
-  shipment is always `OPEN`, so it can't appear in an `IN_TRANSIT` / `DELIVERED`
-  view.
+- **Delete lives on the detail panel, behind `window.confirm()`** — a list row shows
+  too little context to delete safely from.
 
 ### UI
 
+- **The detail panel is the only scroll container; the form inside it isn't.** The
+  form and the panel briefly shared a CSS class, so the form inherited `flex: 1` +
+  `overflow-y: auto` and became a nested scroll region — competing for height with
+  the map's fixed 400px and pushing Save/Delete below a scrollbar the user had to
+  find. The form now has its own class with no flex/overflow rules, the map declares
+  `flex-shrink: 0` so a taller sibling can't squeeze it, and the whole column scrolls
+  as one unit. The form stays above the map deliberately: reversing them would put
+  Save/Delete ~400px lower and clip them again on a 900px-tall viewport.
 - **The map shows the last saved coordinates, not in-progress edits** — editing
   `lat` / `lng` doesn't move the pin until the save lands. Either reading is
   defensible; this keeps the map a view of persisted state.
-- **Save / Create success is confirmed with a small toast** built on the native
-  Popover API (`popover="manual"`, `showPopover()`/`hidePopover()`), rendered in the
-  top layer so Create's confirmation is visible after its dialog closes. `"manual"`,
-  not `"auto"` — `"auto"` light-dismisses on any outside click, including the very
-  Save button that re-triggers it, which closed the toast via the browser before the
-  next `setSuccessMessage` call could reopen it (same string in, no state change, no
-  re-run). It's a local presentational component, not app-wide toast infrastructure.
-- **404 and 5xx responses are normalized centrally**, in the same `httpClient`
-  response interceptor that already turns a timed-out request into a friendly
-  `Error`. Every call site already does `err instanceof Error ? err.message : "..."`,
-  so this needed no call-site changes — a deleted-elsewhere shipment or a server
-  error now surfaces a readable message everywhere for free. A network failure with
-  no response at all (server not running, CORS, DNS) isn't normalized the same way —
-  axios's own message for that case is reasonably clear already, and it wasn't what
-  was asked for.
-- **A failed assignment-list fetch is shown inline** (folded into the picker's
-  placeholder text), consistent with the list's inline fetch-error and the form's
-  save-error — deliberately not a toast / notification system.
+- **Save / Create / Delete outcomes are confirmed with a small toast**, `Toast`, built
+  on the native Popover API (`popover="manual"`, `showPopover()`/`hidePopover()`),
+  rendered in the top layer so Create's confirmation is visible after its dialog
+  closes. It's `"manual"` rather than `"auto"`, since a timed toast shouldn't
+  light-dismiss on an unrelated click.
+- **The toast is triggered by a plain `notify(text, variant?)` function, not a prop
+  or Context.** It began as `ShipmentExplorer` state passed down as a prop, but
+  `EditShipmentForm` is `key`'d by shipment id and unmounts on every shipment
+  switch: a save or delete that resolved after the user had navigated away was
+  calling `setState` on a dead component, so the outcome vanished silently — no
+  confirmation and no error. `src/components/Toast/toastStore.ts` is a ~20-line
+  external store (`useSyncExternalStore`, the primitive Zustand and friends use to
+  hook non-React state into React); `notify()` is a module function, so it still
+  works from a component that's already gone. Exactly one component (`Toast`,
+  mounted once in `App`) subscribes. Prop-drilling would have worked but made
+  `ShipmentDetails` forward something it never uses, and wouldn't reach a future
+  Extra Credit route tree that shares no ancestor with this one.
+- **Timeouts, 404s, and 5xxs are normalized in one place** — the `httpClient`
+  response interceptor turns each into a readable `Error`, so no call site needed
+  changing. A network failure with no response at all (server not running) is left
+  as axios's own message.
+- **Fetch failures render inline, in the region that failed; action failures toast.**
+  A failed assignment-list fetch folds into the picker's own placeholder text, and
+  the list and detail panels render their fetch errors in place (the list with a
+  Retry). Those describe a region that couldn't load, so they belong in it and
+  should persist. Save / create / delete failures are consequences of something the
+  user just did, can outlive the component that started them, and go through
+  `notify(..., "error")` instead.
 - **Fixed light theme** — no dark mode or theme switching.
 
 ### Testing
@@ -275,6 +266,45 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
   business-rule functions (`buildWhere`, `validateNumberInRange`,
   `getStatusDropdownOptions`, `toApiDateTime`) would be the first to cover with more
   time.
+
+### Extra Credit seams
+
+None of these cost anything today; each is a choice made where the extending option
+was free.
+
+- **`react-router-dom`, for two routes.** Selection could have been component state
+  — it's one panel — but Extra Credit's `/assignments` page needs real routing, and
+  its three-panel drill-down is a nested-route problem. Putting selection in the URL
+  now means that page is a route to add, not a state model to redesign. It's also
+  the right call on its own merits (shareable, refresh-safe), which is why it's here
+  and not filed under speculative.
+- **`ShipmentDetails` takes `selectedId` as a prop and never calls `useParams`.**
+  Extra Credit's panel 3 is the same shipment detail, reached through a different
+  URL shape (`/assignments/:assignmentId/shipments/:shipmentId`). Reading the param
+  in `ShipmentExplorer` and passing it down keeps the panel reusable under any route
+  that supplies an id.
+- **`FormFields/` knows nothing about shipments.** `TextField`, `SelectField`, and
+  `StaticField` take `name` / `label` / `value` / `onChange` and no domain type, so
+  an assignment form is composition, not new components. `useForm<T>` is generic for
+  the same reason and is already shared by two forms.
+- **The map lives in `components/LocationMap/`, not inside the detail panel**, and
+  takes `lat` / `lng` rather than a `Shipment`. Extra Credit's multi-pin,
+  polyline-connected map is a props change to one component instead of a second map
+  implementation.
+- **`Assignment` is fully typed and `services/assignments.ts` already exists.**
+  Modelling the whole resource (`status`, `clients`, `shipment_count`) rather than
+  the two fields the picker needs cost nothing, and `scripts/generate-data.cjs`
+  generates assignments with real back-filled `shipment_count`s — so an assignment
+  list page has correct data to render the day it's written.
+- **`PaginatedResponse<T>` is generic**, and the pagination envelope's quirks
+  (`_where` overriding other params, the clamp behaviour) are solved once in
+  `useShipments`. A paginated assignment list reuses the type and the `Pagination`
+  component directly.
+
+What was deliberately *not* done: no `useResourceList<T>` abstraction over
+`useShipments` with one caller, no assignment components, no routes for pages that
+don't exist. Those are cheap to add against real requirements and expensive to
+unpick when built against imagined ones.
 
 ### With more time
 

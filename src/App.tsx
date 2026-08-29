@@ -13,11 +13,8 @@ function App() {
           <Route path="/" element={<Navigate to="/shipments" replace />} />
           <Route path="/shipments" element={<ShipmentExplorer />} />
           <Route path="/shipments/:id" element={<ShipmentExplorer />} />
+          <Route path="*" element={<Navigate to="/shipments" replace />} />
         </Routes>
-        {/* No props - Toast subscribes directly to the toastStore, so any
-            component anywhere (including a future Extra Credit route tree)
-            can trigger it by importing `notify`, with no prop threading
-            through App/ShipmentExplorer/etc. */}
         <Toast />
       </BrowserRouter>
     </ErrorBoundary>

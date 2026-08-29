@@ -77,9 +77,6 @@ const EditShipmentForm = ({
             ? null
             : shipment.assignment_id,
       });
-      // Patch the list with the server's authoritative response, once
-      // it's confirmed - no pre-emptive optimistic patch or rollback (see
-      // README Assumptions for why).
       onSaved(saved);
       reset(toFormValues(saved));
       notify("Shipment saved.");
@@ -140,7 +137,7 @@ const EditShipmentForm = ({
   );
 
   return (
-    <form className={styles.shipmentDetails} onSubmit={handleSubmit(onValid)}>
+    <form className={styles.editForm} onSubmit={handleSubmit(onValid)}>
       <h2 className={styles.title}>{shipment.label}</h2>
       <StaticField label="Client" value={shipment.client_name} />
       <SelectField

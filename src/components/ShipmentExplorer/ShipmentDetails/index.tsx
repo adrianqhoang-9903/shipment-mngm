@@ -9,13 +9,11 @@ const ShipmentLocationMap = lazy(() => import("../../LocationMap/ShipmentLocatio
 
 interface ShipmentDetailsProps {
   selectedId: string | undefined;
-  patchShipment: (updates: Shipment) => void;
   refetchList: () => void;
 }
 
 const ShipmentDetails = ({
   selectedId,
-  patchShipment,
   refetchList,
 }: ShipmentDetailsProps) => {
   const navigate = useNavigate();
@@ -27,11 +25,13 @@ const ShipmentDetails = ({
     const statusChanged = shipment?.status !== savedShipment.status;
     setShipment(savedShipment);
 
+    // Only a status change needs the list to do anything: it's filtered to
+    // one status, so the row may no longer belong in the current view (and
+    // the totals shift with it). Every other editable field - delivery date,
+    // lat, lng, assignment - is absent from the row, so the list has nothing
+    // to re-render for.
     if (statusChanged) {
-      // possibly stale list
       refetchList();
-    } else {
-      patchShipment(savedShipment);
     }
   };
 
@@ -80,13 +80,7 @@ const ShipmentDetails = ({
     );
   }
 
-  if (error || !shipment) {
-    // `!shipment` can't actually be reached with `error` falsy - the
-    // isLoading/id-mismatch guard above already covers that case - so
-    // `error` is always set once we're here. It stays in this condition
-    // anyway because it's what lets TS narrow `shipment` to non-null for
-    // the rest of the component; there's no separate "not found" message
-    // to fall back to.
+  if (error || !shipment) { // !shipment is unreachable. Only kept so that TypeScript can narrow down its type below.
     return (
       <div className={styles.shipmentDetails}>
         <p className={styles.error}>{error}</p>

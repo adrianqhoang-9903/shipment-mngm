@@ -35,13 +35,7 @@ const TextField = ({
   placeholder,
 }: TextFieldProps) => {
   const [errorMessage, setErrorMessage] = useState("");
-  // :user-invalid only lights up once the value has actually been changed
-  // and then blurred (or a submit was attempted) - merely focusing a
-  // blank field and leaving it again was never a "change" as far as the
-  // spec is concerned. handleBlur used to show the message unconditionally
-  // on any blur, which disagreed with the border in exactly that case -
-  // this mirrors the same gate so the two can't say different things.
-  const hasChangedRef = useRef(false);
+  const hasChangedRef = useRef(false); // error message should mimic :user-invalid behaviour 
 
   const applyValidation = (
     event: ChangeEvent<HTMLInputElement> | FocusEvent<HTMLInputElement>,

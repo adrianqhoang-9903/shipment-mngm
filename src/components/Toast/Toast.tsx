@@ -9,9 +9,6 @@ import styles from "./Toast.module.css";
 
 const DISPLAY_DURATION_MS = 5000;
 
-// No props - subscribes directly to the store. Mount this once, anywhere
-// stable (App.tsx); any component anywhere can trigger it by importing
-// `notify` from ./toastStore, with no plumbing back to here.
 const Toast = () => {
   const toast = useSyncExternalStore(subscribeToast, getToastSnapshot);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -35,12 +32,6 @@ const Toast = () => {
   return (
     <div
       ref={popoverRef}
-      // "manual" (not "auto") - this is a timed toast, not something meant
-      // to light-dismiss on an unrelated click. "auto" was closing it the
-      // instant any other click landed on the page (including the same
-      // button re-triggering it) before showPopover() ever got called
-      // again, since an identical message string wouldn't otherwise be
-      // seen as a state change either.
       popover="manual"
       className={`${styles.toast} ${toast?.variant === "error" ? styles.error : ""}`}
       onToggle={handleToggle}

@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type InvalidEvent } from "react";
 import styles from "./FormFields.module.css";
 
 interface SelectFieldOption {
@@ -36,10 +36,7 @@ const SelectField = ({
     }
   };
 
-  // Same as TextField: suppresses the native validation bubble on a
-  // blocked submit attempt, showing the same message in our own span
-  // instead so nothing is silently lost.
-  const handleInvalid = (event: FormEvent<HTMLSelectElement>) => {
+  const handleInvalid = (event: InvalidEvent<HTMLSelectElement>) => {
     event.preventDefault();
     setErrorMessage(event.currentTarget.validationMessage);
   };

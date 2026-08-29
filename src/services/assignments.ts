@@ -1,9 +1,6 @@
 import { httpClient } from "../lib/http";
 import type { Assignment } from "../types";
 
-// Only OPEN assignments can accept a newly-assigned shipment - a COMPLETED
-// assignment's route has already finished. Not stated explicitly in the
-// spec; documented as an assumption in the README.
 export const fetchOpenAssignments = async (
   signal?: AbortSignal,
 ): Promise<Assignment[]> => {
@@ -14,8 +11,6 @@ export const fetchOpenAssignments = async (
   return data;
 };
 
-// json-server auto-generates this route from the `assignments` top-level
-// key, same as /shipments/:id - no server-side change needed.
 export const fetchAssignmentById = async (
   id: string,
   signal?: AbortSignal,

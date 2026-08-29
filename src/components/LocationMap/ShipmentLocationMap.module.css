@@ -1,5 +1,6 @@
 .shipmentLocationMap {
   height: 400px;
   width: 100%;
-  align-self: center;
+  /* makes the map keep its height at smaller resolutions */
+  flex-shrink: 0;
 }

@@ -24,8 +24,6 @@ export interface Assignment {
   shipment_count: number;
 }
 
-// Mirrors json-server v1's pagination envelope as-is; interpretation is
-// left to the caller rather than reshaped here.
 export interface PaginatedResponse<T> {
   first: number;
   prev: number | null;

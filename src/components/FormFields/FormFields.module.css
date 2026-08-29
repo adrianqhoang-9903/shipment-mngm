@@ -44,17 +44,6 @@
   color: var(--text);
 }
 
-/* :user-invalid instead of plain :invalid - matches the same underlying
-   validity (min/max/required, or a custom setCustomValidity() message),
-   but only once the user has actually interacted with the control: either
-   changed-then-blurred it, or attempted to submit the form (an attempted
-   submission counts as interaction for every control per spec, not just
-   the one the browser autofocuses - so a Save click on a form with
-   several invalid fields lights all of them up together, not just the
-   first). A pristine, never-touched, never-submitted field never renders
-   as invalid no matter what it's currently holding - this matters for a
-   future Create form starting with several blank required fields, which
-   plain :invalid would show as an unbroken wall of red on first render. */
 .field input:user-invalid,
 .field select:user-invalid {
   border-color: var(--error, #b00020);
@@ -71,19 +60,10 @@
   cursor: not-allowed;
 }
 
-/* The placeholder <option value=""> has no native equivalent of
-   <input>'s ::placeholder - style the select itself, matched by whichever
-   option is currently checked, so only the placeholder state renders gray
-   while a real selection still renders as normal text. */
 .field select:has(option[value=""]:checked) {
   color: rgba(0, 0, 0, 0.5);
 }
 
-/* <option> inherits `color` from its parent <select> by default, so the
-   gray above would otherwise carry into every row of the open dropdown
-   list too, not just the closed placeholder display. An explicit color on
-   the option itself always wins over an inherited one, regardless of
-   whatever state the select is in. */
 .field option {
   color: var(--text);
 }

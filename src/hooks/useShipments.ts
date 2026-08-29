@@ -24,16 +24,6 @@ export const useShipments = () => {
     setRefreshKey((key) => key + 1);
   };
 
-  const patchShipment = (updates: Shipment) => {
-    setShipments((prev) =>
-      prev.map((shipment) =>
-        shipment.id === updates.id
-          ? { ...shipment, ...updates }
-          : shipment,
-      ),
-    );
-  };
-
   useEffect(() => {
     const controller = new AbortController();
 
@@ -74,7 +64,6 @@ export const useShipments = () => {
     totalPages,
     totalItems,
     refetch,
-    patchShipment,
   };
 };
 

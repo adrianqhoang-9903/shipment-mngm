@@ -6,7 +6,7 @@ import Pagination from "./Pagination";
 import type { ShipmentStatus } from "../../../types";
 import styles from "./index.module.css";
 
-interface ShipmentListProps extends Omit<UseShipmentsResult, "patchShipment"> {
+interface ShipmentListProps extends UseShipmentsResult {
   selectedId: string | undefined;
   onSelectShipment: (id: string) => void;
   openCreateShipment: () => void;

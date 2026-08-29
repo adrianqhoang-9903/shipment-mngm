@@ -1,13 +1,3 @@
-// A minimal external store (React's own `useSyncExternalStore` primitive -
-// the same mechanism libraries like Zustand/Redux use to hook non-React
-// state into React), not a Context/Provider and not an event-bus library.
-// `notify()` is a plain function, importable and callable from anywhere -
-// no hook, no prop, no ancestor component has to know about it - so a
-// future route tree (e.g. Extra Credit's /assignments) gets toasts for
-// free. Exactly one component (`Toast`) ever subscribes, so triggering a
-// toast never re-renders anything else, unlike a Context whose value
-// changes on every notification.
-
 type ToastVariant = "success" | "error";
 
 interface ToastMessage {
