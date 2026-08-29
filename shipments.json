@@ -994,12 +994,12 @@
       "id": "shp_033",
       "client_name": "Logix",
       "label": "SFO-581-250523-33",
-      "status": "OPEN",
+      "status": "IN_TRANSIT",
       "arrival_date": "2026-08-28T14:14:53.400Z",
-      "delivery_by_date": "2026-08-30T14:14:53.400Z",
+      "delivery_by_date": "2026-08-30T00:00:00.000Z",
       "eta": "2026-08-29T12:14:53.400Z",
       "warehouse_id": "581",
-      "assignment_id": null,
+      "assignment_id": "as_012",
       "lat": 32.71397956553297,
       "lng": -97.2812124172332
     },
@@ -13574,5 +13574,6 @@
       "lat": 32.64683580236548,
       "lng": -97.13544204817691
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

@@ -3,6 +3,7 @@ import { fetchAssignmentById, fetchOpenAssignments } from "../../../services/ass
 import SelectField from "../../FormFields/SelectField";
 import StaticField from "../../FormFields/StaticField";
 import type { Assignment, Shipment, ShipmentStatus } from "../../../types";
+import { getTransitionKind } from "../../../utils/shipments";
 import styles from "./AssignmentField.module.css";
 
 interface AssignmentFieldProps {
@@ -45,9 +46,9 @@ const AssignmentField = ({
   );
   const [assignmentLabel, setAssignmentLabel] = useState<string | null>(null);
 
-  const isAssigning = shipment.status === "OPEN" && status === "IN_TRANSIT";
-  const isUnassigning =
-    shipment.status === "IN_TRANSIT" && status === "OPEN";
+  const transition = getTransitionKind(shipment.status, status);
+  const isAssigning = transition === "assigning";
+  const isUnassigning = transition === "unassigning";
 
   useEffect(() => {
     setAssignmentLabel(null);
@@ -97,7 +98,6 @@ const AssignmentField = ({
     hasError: assignmentsError !== null,
     optionCount: assignmentOptions.length,
   });
-
 
   return (
     <div className={styles.hintWrapper}>

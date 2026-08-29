@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { useShipments } from "../../hooks/useShipments";
 import { URL_PARAMS } from "../../constants";
-import { withParam } from "../../utils/shipmentListParams";
+import { withParam } from "../../utils/queryParams";
 import ShipmentList from "./ShipmentList";
 import ShipmentDetails from "./ShipmentDetails";
 import styles from "./index.module.css";

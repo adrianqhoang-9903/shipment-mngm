@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useForm } from "../../../hooks/useForm";
 import { deleteShipment, saveShipment } from "../../../services/shipments";
-import { toISODate, toDisplayDate, toApiDateTime } from "../../../utils/date";
+import { toISODate, toDisplayDate, toEndOfDay } from "../../../utils/date";
 import {
   LATITUDE_RANGE,
   LONGITUDE_RANGE,
   validateNumberInRange,
 } from "../../../utils/validation";
-import { getStatusDropdownOptions } from "../../../utils/statusTransitions";
+import {
+  getStatusDropdownOptions,
+  resolveAssignmentId,
+} from "../../../utils/shipments";
 import { STATUS_LABELS } from "../../../constants";
 import StaticField from "../../FormFields/StaticField";
 import TextField from "../../FormFields/TextField";
@@ -32,21 +35,6 @@ const toFormValues = (shipment: Shipment): FormValues => ({
   status: shipment.status,
   assignment_id: shipment.assignment_id ?? "",
 });
-
-const resolveAssignmentId = (
-  shipment: Shipment,
-  values: FormValues,
-): string | null => {
-  const isAssigning =
-    shipment.status === "OPEN" && values.status === "IN_TRANSIT";
-  if (isAssigning) return values.assignment_id || null;
-
-  const isUnassigning =
-    shipment.status === "IN_TRANSIT" && values.status === "OPEN";
-  if (isUnassigning) return null;
-
-  return shipment.assignment_id ?? null;
-};
 
 interface EditShipmentFormProps {
   shipment: Shipment;
@@ -75,7 +63,7 @@ const EditShipmentForm = ({
     try {
       const saved = await saveShipment({
         ...shipment,
-        delivery_by_date: toApiDateTime(formValues.delivery_by_date),
+        delivery_by_date: toEndOfDay(formValues.delivery_by_date),
         lat: Number(formValues.lat),
         lng: Number(formValues.lng),
         status: formValues.status,

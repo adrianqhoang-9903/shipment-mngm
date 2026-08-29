@@ -3,4 +3,5 @@ export const toISODate = (isoDateTime: string): string => isoDateTime.slice(0, 1
 export const toDisplayDate = (isoDateTime: string): string =>
   toISODate(isoDateTime).replaceAll("-", "/");
 
-export const toApiDateTime = (dateTime: string): string => `${dateTime}T00:00:00.000Z`;
+export const toStartOfDay = (date: string): string => `${date}T00:00:00.000Z`;
+export const toEndOfDay = (date: string): string => `${date}T23:59:59.999Z`;

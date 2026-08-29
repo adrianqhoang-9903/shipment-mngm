@@ -3,9 +3,11 @@ import {
   STATUS_LABELS,
   URL_PARAMS,
 } from "../constants";
-import type { ShipmentListQuery, ShipmentStatus } from "../types";
-
-export type ShipmentListUrlQuery = Omit<ShipmentListQuery, "perPage">;
+import type {
+  ShipmentListQuery,
+  ShipmentListUrlQuery,
+  ShipmentStatus,
+} from "../types";
 
 const readStatus = (value: string | null): ShipmentStatus =>
   value !== null && value in STATUS_LABELS

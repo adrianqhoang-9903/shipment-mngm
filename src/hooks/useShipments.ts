@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchShipments } from "../services/shipments";
-import {
-  mergeListParams,
-  readListParams,
-  type ShipmentListUrlQuery,
-} from "../utils/shipmentListParams";
-import type { Shipment } from "../types";
+import { mergeListParams, readListParams } from "../utils/queryParams";
+import type { Shipment, ShipmentListUrlQuery } from "../types";
 
 export const useShipments = () => {
   const [searchParams, setSearchParams] = useSearchParams();

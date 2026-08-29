@@ -6,7 +6,10 @@ import type {
   ShipmentStatus,
 } from "../types";
 
-const buildWhere = (status: ShipmentStatus, query: string) => {
+// Exported for its unit tests - the json-server quirks it encodes (explicit
+// `eq`, and omitting `or` entirely rather than sending an empty array) are
+// silent-wrong-answer bugs, not loud ones, so they're worth pinning down.
+export const buildWhere = (status: ShipmentStatus, query: string) => {
   const where: Record<string, unknown> = { status: { eq: status } };
   const trimmed = query.trim();
   if (trimmed) {

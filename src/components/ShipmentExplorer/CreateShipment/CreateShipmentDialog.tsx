@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "../../../hooks/useForm";
 import { createShipment } from "../../../services/shipments";
-import { toApiDateTime, toISODate } from "../../../utils/date";
+import { toEndOfDay, toISODate, toStartOfDay } from "../../../utils/date";
 import {
   LATITUDE_RANGE,
   LONGITUDE_RANGE,
@@ -54,12 +54,12 @@ const CreateShipmentDialog = ({
     setIsCreating(true);
 
     try {
-      const deliveryBy = toApiDateTime(formValues.delivery_by_date);
+      const deliveryBy = toEndOfDay(formValues.delivery_by_date);
       const created = await createShipment({
         client_name: formValues.client_name.trim(),
         label: formValues.label.trim(),
         status: "OPEN",
-        arrival_date: toApiDateTime(formValues.arrival_date),
+        arrival_date: toStartOfDay(formValues.arrival_date),
         delivery_by_date: deliveryBy,
         eta: deliveryBy,
         warehouse_id: formValues.warehouse_id.trim(),

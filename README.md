@@ -213,13 +213,26 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 
 ### Dates
 
-- **`delivery_by_date` is treated as a day-granular deadline.** It's stored as a
-  full ISO datetime, but the spec frames it as a deadline and provides a separate
-  `eta` for the estimated time. It's edited as a date; on save the time is
-  normalized to `T00:00:00.000Z`, so an existing record's original time-of-day is
-  lost on the first edit. `eta` is never shown or edited.
+- **Dates are edited at day granularity, not as datetimes.** Both fields are stored
+  as full ISO datetimes, but the time component in the sample data is a generator
+  artifact rather than information: `generate-data.cjs` derives every record from a
+  single `baseDate` by subtracting whole days, so *every* shipment carries the same
+  wall-clock time — the moment the script happened to run. Surfacing that in a
+  `datetime-local` input would present the script's start time as though it were a
+  fact about each shipment. `eta` is the field that genuinely varies by time
+  (`arrival + random(0–48h)`), and the spec deliberately keeps it separate from the
+  `delivery_by_date` deadline; it's never shown or edited here.
+- **A deadline is normalized to the end of its day, an arrival to the start.**
+  `toEndOfDay` / `toStartOfDay` rather than one shared helper, because the two fields
+  don't mean the same shape of thing. "Deliver by the 26th" means the end of the
+  26th — normalizing it to `T00:00:00.000Z`, as an earlier version did, silently
+  moved every edited deadline nearly a day earlier than the value the API already
+  held. Nothing in the app computes lateness, so it was inert here, but it was wrong
+  data going over the wire.
 - **`delivery_by_date` must be on or after `arrival_date`** — enforced with a
-  dynamic `min` on the date input; the same day is allowed.
+  dynamic `min` on the date input; the same day is allowed. Same-day now also holds
+  at the timestamp level (`T00:00:00.000Z` < `T23:59:59.999Z`), where the old
+  midnight-for-both rule made the two identical.
 
 ### Forms & validation
 
@@ -328,10 +341,29 @@ Where the spec is ambiguous, a reasonable assumption was made and is recorded he
 
 ### Testing
 
-- **No test suite.** Not required at any tier. Vitest is configured; the pure
-  business-rule functions (`buildWhere`, `validateNumberInRange`,
-  `getStatusDropdownOptions`, `toApiDateTime`) would be the first to cover with more
-  time.
+- **Tests cover the business rules, and stop there.** 69 tests across the pure
+  functions in `src/utils/` plus `buildWhere` — status-transition legality,
+  coordinate range validation, date normalization, URL-param read/write, and the
+  `_where` query builder. Nothing renders a component: the spec asks for none of
+  this, so the budget went to the logic where a silent wrong answer is plausible
+  rather than to the parts a reviewer can see working in ten seconds.
+- **What the tests are actually for** is the class of bug that fails quietly. Two
+  json-server behaviours return *zero rows* rather than an error — a bare
+  `{status: "OPEN"}` instead of `{status: {eq: "OPEN"}}`, and an empty `or: []`
+  instead of omitting the key — and both look like "no results" in the UI, not like
+  a bug. Same for the URL-merge rule: the list filters and the selected shipment
+  share one query string with two different writers, so a regression there silently
+  drops someone's filters. Those invariants are pinned explicitly, with the
+  reasoning in the test names.
+- **Domain rules live in `src/utils/`, not in components.** `resolveAssignmentId`
+  (what a save sends for `assignment_id`) and `getTransitionKind` (which status
+  changes touch the assignment at all) started life inside `EditShipmentForm` and
+  `AssignmentField` — the latter duplicated in both, which is how the two would
+  eventually disagree about what "assigning" means. Both now sit in
+  `utils/shipments.ts` beside `getStatusDropdownOptions`, and both are tested.
+  `resolveAssignmentId` takes two structural `{ status, assignment_id }` objects
+  rather than a `Shipment` and the form's local `FormValues`, so a domain rule
+  doesn't drag either the API shape or a component's private type along with it.
 
 ### Extra Credit seams
 
