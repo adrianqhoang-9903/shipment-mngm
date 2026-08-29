@@ -4,7 +4,6 @@ interface PaginationProps {
   page: number;
   totalPages: number;
   totalItems: number;
-  hasNextPage: boolean;
   isLoading: boolean;
   onPageChange: (page: number) => void;
 }
@@ -13,7 +12,6 @@ const Pagination = ({
   page,
   totalPages,
   totalItems,
-  hasNextPage,
   isLoading,
   onPageChange,
 }: PaginationProps) => {
@@ -37,7 +35,7 @@ const Pagination = ({
       <span className={styles.pageInfo}>
         Page {page} of {totalPages} ({totalItems} shipments)
       </span>
-      <button onClick={handleNext} disabled={isLoading || !hasNextPage}>
+      <button onClick={handleNext} disabled={isLoading || page >= totalPages}>
         Next
       </button>
     </div>

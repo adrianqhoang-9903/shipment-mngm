@@ -12,7 +12,6 @@ export const useShipments = () => {
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [hasNextPage, setHasNextPage] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { status, query, page, perPage } = params;
@@ -52,7 +51,6 @@ export const useShipments = () => {
         setShipments(response.data);
         setTotalPages(response.pages);
         setTotalItems(response.items);
-        setHasNextPage(response.next !== null);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -75,7 +73,6 @@ export const useShipments = () => {
     error,
     totalPages,
     totalItems,
-    hasNextPage,
     refetch,
     patchShipment,
   };

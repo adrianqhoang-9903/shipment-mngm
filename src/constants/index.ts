@@ -2,7 +2,7 @@ import type { ShipmentListQuery, ShipmentStatus } from "../types";
 
 export const DEFAULT_PAGE_SIZE = 25;
 export const REQUEST_TIMEOUT_MS = 8000;
-export const SEARCH_DEBOUNCE_MS = 300;
+export const SEARCH_DEBOUNCE_MS = 500;
 
 // Client-side display mapping only - the server still speaks the raw
 // SCREAMING_CASE values, this is purely presentational.

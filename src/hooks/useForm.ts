@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import type { RefObject, SubmitEvent } from "react";
+import { useState } from "react";
+import type { SubmitEvent } from "react";
 
 interface UseFormResult<T> {
   values: T;
@@ -8,18 +8,14 @@ interface UseFormResult<T> {
   handleSubmit: (
     onValid: (values: T) => void,
   ) => (event: SubmitEvent<HTMLFormElement>) => void;
-  formProps: {
-    ref: RefObject<HTMLFormElement | null>;
-  };
   reset: (newValues: T) => void;
 }
 
 export const useForm = <T extends object>(
-  initialValues: T,
+  createInitialValues: () => T,
 ): UseFormResult<T> => {
-  const formRef = useRef<HTMLFormElement>(null);
-  const [baseline, setBaseline] = useState<T>(initialValues);
-  const [values, setValues] = useState<T>(initialValues);
+  const [baseline, setBaseline] = useState<T>(createInitialValues);
+  const [values, setValues] = useState<T>(createInitialValues);
 
   const setField = <K extends keyof T>(key: K, value: T[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -31,7 +27,6 @@ export const useForm = <T extends object>(
   );
 
   const reset = (newValues: T) => {
-    formRef.current?.reset();
     setBaseline(newValues);
     setValues(newValues);
   };
@@ -48,9 +43,6 @@ export const useForm = <T extends object>(
     setField,
     isDirty,
     handleSubmit,
-    formProps: {
-      ref: formRef,
-    },
     reset,
   };
 };

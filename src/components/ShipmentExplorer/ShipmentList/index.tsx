@@ -21,7 +21,6 @@ const ShipmentList = ({
   error,
   totalPages,
   totalItems,
-  hasNextPage,
   refetch,
   onSelectShipment,
   openCreateShipment
@@ -66,7 +65,6 @@ const ShipmentList = ({
             page={params.page}
             totalPages={totalPages}
             totalItems={totalItems}
-            hasNextPage={hasNextPage}
             isLoading={isLoading}
             onPageChange={handlePageChange}
           />

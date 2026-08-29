@@ -3,7 +3,7 @@ import {
   useState,
   type ChangeEvent,
   type FocusEvent,
-  type FormEvent,
+  type InvalidEvent,
 } from "react";
 import styles from "./FormFields.module.css";
 
@@ -67,15 +67,7 @@ const TextField = ({
     }
   };
 
-  // Suppresses the browser's own validation bubble on a blocked submit
-  // attempt (preventDefault() on `invalid` is specifically what that
-  // does - constraint validation itself, and the block on submit, are
-  // unaffected). Shows the same message in our own span instead, so
-  // nothing is silently lost - a pristine field that's never been
-  // touched still gets its `:user-invalid` red border from the attempt
-  // (an attempted submission counts as interaction for every control),
-  // but would otherwise show no explanatory text without this.
-  const handleInvalid = (event: FormEvent<HTMLInputElement>) => {
+  const handleInvalid = (event: InvalidEvent<HTMLInputElement>) => {
     event.preventDefault();
     setErrorMessage(event.currentTarget.validationMessage);
   };

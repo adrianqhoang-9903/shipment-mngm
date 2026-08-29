@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchShipmentById } from "../../../services/shipments";
 import EditShipmentForm from "./EditShipmentForm";
 import type { Shipment } from "../../../types";
 import styles from "./index.module.css";
-import ShipmentLocationMap from "../../LocationMap/ShipmentLocationMap";
+
+const ShipmentLocationMap = lazy(() => import("../../LocationMap/ShipmentLocationMap"));
 
 interface ShipmentDetailsProps {
   selectedId: string | undefined;
@@ -71,7 +72,7 @@ const ShipmentDetails = ({
     );
   }
 
-  if (isLoading) {
+  if (isLoading || (!error && shipment?.id !== selectedId)) {
     return (
       <div className={styles.shipmentDetails}>
         <p className={styles.placeholder}>Loading...</p>

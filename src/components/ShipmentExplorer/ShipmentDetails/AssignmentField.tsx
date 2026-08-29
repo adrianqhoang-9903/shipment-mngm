@@ -31,14 +31,15 @@ const AssignmentField = ({
 
   useEffect(() => {
     setAssignmentLabel(null);
-    if (!shipment.assignment_id) return;
+    const assignmentId = shipment.assignment_id;
+    if (!assignmentId) return;
 
     const controller = new AbortController();
-    fetchAssignmentById(shipment.assignment_id, controller.signal)
+    fetchAssignmentById(assignmentId, controller.signal)
       .then((assignment) => setAssignmentLabel(assignment.label))
       .catch(() => {
-        // Fall back to the raw id in the caller's render - a lookup
-        // failure shouldn't block viewing the rest of the shipment.
+        if (controller.signal.aborted) return;
+        setAssignmentLabel(assignmentId);
       });
 
     return () => controller.abort();

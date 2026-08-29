@@ -3,10 +3,6 @@ import { STATUS_LABELS } from "../../../constants";
 import type { ShipmentStatus } from "../../../types";
 import styles from "./ShipmentFilters.module.css";
 
-// The statuses that exist are a fixed, closed set - not server-fetched. The
-// mock backend's /statuses endpoint returns an unlabeled 1:1 mirror of this
-// same enum (no labels, no transition rules), so it carries no information
-// this list doesn't already need to hardcode anyway (see README Assumptions).
 const STATUSES = Object.keys(STATUS_LABELS) as ShipmentStatus[];
 
 interface ShipmentFiltersProps {

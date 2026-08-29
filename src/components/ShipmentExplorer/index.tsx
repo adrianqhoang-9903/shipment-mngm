@@ -19,7 +19,6 @@ const ShipmentExplorer = () => {
     error,
     totalPages,
     totalItems,
-    hasNextPage,
     refetch,
     patchShipment,
   } = useShipments();
@@ -53,7 +52,6 @@ const ShipmentExplorer = () => {
         error={error}
         totalPages={totalPages}
         totalItems={totalItems}
-        hasNextPage={hasNextPage}
         refetch={refetch}
         onSelectShipment={handleSelectShipment}
         openCreateShipment={openCreateShipment}
@@ -65,7 +63,6 @@ const ShipmentExplorer = () => {
       />
       {isCreateOpen && (
         <CreateShipmentDialog
-          isOpen={isCreateOpen}
           closeCreateShipment={() => setIsCreateOpen(false)}
           onCreated={handleCreated}
         />

@@ -30,7 +30,13 @@ const SuccessToast = ({ message, onDismiss }: SuccessToastProps) => {
   return (
     <div
       ref={popoverRef}
-      popover="auto"
+      // "manual" (not "auto") - this is a timed toast, not something meant
+      // to light-dismiss on an unrelated click. "auto" was closing it the
+      // instant any other click landed on the page (including the same
+      // Save button re-triggering it) before showPopover() ever got called
+      // again, since the message string not actually changing meant the
+      // effect below never re-ran to reopen it.
+      popover="manual"
       className={styles.toast}
       onToggle={handleToggle}
     >

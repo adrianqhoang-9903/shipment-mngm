@@ -33,26 +33,6 @@ const toFormValues = (shipment: Shipment): FormValues => ({
   assignment_id: shipment.assignment_id ?? "",
 });
 
-const toApiPayload = (shipment: Shipment, values: FormValues): Shipment => {
-  const isAssigning =
-    shipment.status === "OPEN" && values.status === "IN_TRANSIT";
-  const isUnassigning =
-    shipment.status === "IN_TRANSIT" && values.status === "OPEN";
-
-  return {
-    ...shipment,
-    delivery_by_date: toApiDateTime(values.delivery_by_date),
-    lat: Number(values.lat),
-    lng: Number(values.lng),
-    status: values.status,
-    assignment_id: isAssigning
-      ? values.assignment_id || null
-      : isUnassigning
-        ? null
-        : shipment.assignment_id,
-  };
-};
-
 interface EditShipmentFormProps {
   shipment: Shipment;
   onSaved: (updates: Shipment) => void;
@@ -65,20 +45,41 @@ const EditShipmentForm = ({
   onDeleted,
 }: EditShipmentFormProps) => {
   const { values, setField, isDirty, handleSubmit, reset } =
-    useForm<FormValues>(toFormValues(shipment));
+    useForm<FormValues>(() => toFormValues(shipment));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const onValid = async (formValues: FormValues) => {
-    if (!isDirty) return;
+    if (!isDirty) {
+      // Nothing changed - skip the redundant PUT, but still confirm the
+      // click did something, rather than silently doing nothing.
+      setSuccessMessage("Shipment saved.");
+      return;
+    }
 
     setIsSaving(true);
     setFormError(null);
 
     try {
-      const saved = await saveShipment(toApiPayload(shipment, formValues));
+      const isAssigning =
+        shipment.status === "OPEN" && formValues.status === "IN_TRANSIT";
+      const isUnassigning =
+        shipment.status === "IN_TRANSIT" && formValues.status === "OPEN";
+
+      const saved = await saveShipment({
+        ...shipment,
+        delivery_by_date: toApiDateTime(formValues.delivery_by_date),
+        lat: Number(formValues.lat),
+        lng: Number(formValues.lng),
+        status: formValues.status,
+        assignment_id: isAssigning
+          ? formValues.assignment_id || null
+          : isUnassigning
+            ? null
+            : shipment.assignment_id,
+      });
       // Patch the list with the server's authoritative response, once
       // it's confirmed - no pre-emptive optimistic patch or rollback (see
       // README Assumptions for why).

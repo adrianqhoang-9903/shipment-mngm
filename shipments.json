@@ -592,11 +592,11 @@
       "label": "EWR-581-250525-15",
       "status": "OPEN",
       "arrival_date": "2026-08-21T14:35:31.349Z",
-      "delivery_by_date": "2026-08-23T14:35:31.349Z",
+      "delivery_by_date": "2026-08-23T00:00:00.000Z",
       "eta": "2026-08-22T00:35:31.349Z",
       "warehouse_id": "581",
       "assignment_id": null,
-      "lat": 32.66360315329383,
+      "lat": 32.76360315329383,
       "lng": -97.23743343861155
     },
     {
@@ -735,11 +735,11 @@
       "label": "JFK-581-250527-27",
       "status": "OPEN",
       "arrival_date": "2026-08-25T14:35:31.349Z",
-      "delivery_by_date": "2026-08-27T14:35:31.349Z",
+      "delivery_by_date": "2026-08-27T00:00:00.000Z",
       "eta": "2026-08-25T18:35:31.349Z",
       "warehouse_id": "581",
       "assignment_id": null,
-      "lat": 33.021497336874035,
+      "lat": 12.021497336874035,
       "lng": -96.8927896114256
     },
     {
@@ -13403,6 +13403,32 @@
       "lat": 31,
       "lng": 32,
       "id": "JkSmtv1Dr9I"
+    },
+    {
+      "client_name": "23452",
+      "label": "234",
+      "status": "OPEN",
+      "arrival_date": "2026-08-29T00:00:00.000Z",
+      "delivery_by_date": "2026-08-29T00:00:00.000Z",
+      "eta": "2026-08-29T00:00:00.000Z",
+      "warehouse_id": "543",
+      "assignment_id": null,
+      "lat": 44,
+      "lng": 32,
+      "id": "T4Biik-QNUc"
+    },
+    {
+      "client_name": "DHL",
+      "label": "12334",
+      "status": "OPEN",
+      "arrival_date": "2026-08-29T00:00:00.000Z",
+      "delivery_by_date": "2026-08-29T00:00:00.000Z",
+      "eta": "2026-08-29T00:00:00.000Z",
+      "warehouse_id": "502",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 107,
+      "id": "5qsEUs8WNeU"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

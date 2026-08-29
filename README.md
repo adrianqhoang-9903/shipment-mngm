@@ -1,48 +1,288 @@
 # Shipment Management UI
 
-## Run the project locally
+A two-panel shipment management tool: a paginated, searchable, status-filtered list
+on the left; a detail / edit panel on the right. Built for the Jitsu frontend
+exercise (Core + Stretch).
+
+## Running locally
 
 ### Prerequisites
 
-### Installation & Setup
+- Node 20.19+ or 22.12+ (required by Vite 8)
+- npm
 
-### Tech Stack & Architecture
+### Install
 
-### Features
+```bash
+npm install
+```
 
-### Assumptions
+### Run
 
-- **Status grouping**: the spec doesn't prescribe a UI treatment for "grouped by status," so shipments are filtered to one status at a time via a dropdown rather than three columns or one merged list - keeps pagination scoped to a single status per view instead of three independently-paginated lists.
-- `delivery_by_date` is treated as a day-granular deadline. The field stores a full ISO datetime, but the spec describes it as a delivery deadline and provides a separate eta field for the estimated delivery time. The detail panel edits it as a date only; on save the time component is normalized to T00:00:00.000Z. An existing record's original time-of-day is not preserved once the date is edited. eta is not shown or edited — it isn't in the spec's detail-panel field list.
-- `delivery_by_date` must be on or after `arrival_date` (a shipment can't be scheduled for delivery before it's reached the warehouse). Enforced via a dynamic `min` on the date input, not custom comparison logic. "After" is read as inclusive of the same day, not strictly the next day or later.
-- **Hand-rolled form state instead of Formik/React Hook Form.** The editable-field surface is small (3 fields in Core's detail form; Stretch's create-shipment form is expected to be similarly small given it calls for "sensible defaults"), and every design decision needs to be explainable live, so form values, dirty-tracking, and validation are hand-rolled behind a small generic `useForm` hook rather than adopting a form library. This also surfaced a concrete reason the library wouldn't have helped here specifically: neither Formik's nor React Hook Form's own numeric-input handling (`valueAsNumber`/`setValueAs`) fixes native `<input type="number">`'s browser-level value sanitization (see next point) - both would still need the same custom parsing step, just relocated into their own APIs.
-- **Latitude/longitude use `type="text"` + `inputMode="decimal"`, not `type="number"`.** Verified directly in a browser (not assumed) that a native number input's own `.value` getter collapses any unparseable intermediate keystroke - a bare `-`, a trailing `.`, `1e` before the exponent digit - to an empty string at the DOM level, before any JS runs. Combined with `Number("") === 0` in JavaScript, a naive `Number(event.target.value)` in the change handler would silently corrupt the field to `0` while the user is still typing a negative coordinate (a normal, frequent case for this domain, not an edge case). The fix keeps using the browser's native Constraint Validation API (`:user-invalid` styling, `validationMessage`) rather than building a parallel one: a custom range-check function calls `element.setCustomValidity()` in place of native `min`/`max`, and the draft stores the raw typed string, converting to a real number only at the point of building the API payload.
+Two processes, in separate terminals:
 
-- **No optimistic update / rollback for the list after saving a shipment.** An earlier version patched the list's copy of the shipment immediately on submit and rolled it back if the save failed. Removed: none of the editable fields (`delivery_by_date`, `lat`, `lng`) are shown in the list row, so the pre-emptive patch never had any observable effect - it added a rollback branch and a captured "previous values" snapshot for a UI state nothing ever displayed. The list is now patched once, after the save succeeds, with the server's response.
-- **Status transitions.** The status dropdown only ever lists the shipment's current status plus its valid targets (`OPEN → IN_TRANSIT`, `IN_TRANSIT → DELIVERED`, `IN_TRANSIT → OPEN`); `DELIVERED` has no valid outgoing transition, so its dropdown is a disabled single option rather than a live control with nothing to do. Selecting `IN_TRANSIT → OPEN` clears `assignment_id` automatically (a side effect, not a user-editable field) with an inline note explaining it, since silently dropping data on save would otherwise be surprising.
-- **The assignment picker.** The spec's own data generator doesn't produce an `assignments` collection at all, and never sets `assignment_id` on any sample shipment, so it was extended (`scripts/generate-data.cjs`) to generate ~40 assignments and retrofit realistic `assignment_id` links onto `IN_TRANSIT`/`DELIVERED` sample shipments - otherwise the OPEN → IN_TRANSIT flow would have nothing real to assign. The picker only lists `OPEN` assignments (`GET /assignments?status=OPEN`) - a `COMPLETED` assignment's route has already finished, so it shouldn't be able to accept a new shipment; this isn't stated explicitly in the spec, it's an inferred business rule. It's fetched lazily and imperatively - triggered directly from the status `<select>`'s own change handler, not an effect reacting to a derived value - only the first time a shipment is actually moved toward `IN_TRANSIT`, not on every OPEN shipment's detail view, and not refetched on repeated toggling of the same shipment. A `useRef`-held `AbortController`, cancelled from one unmount-only cleanup effect, covers the case where the user navigates to a different shipment before the request resolves. This state (the fetched list, its loading/error, plus the separate assignment-label lookup for display) eventually moved into its own `useShipmentAssignment` hook once it grew past "a couple of `useState` calls" - four states, a ref, and two effects earned that extraction on their own; an earlier, thinner version of just the fetch call was deliberately kept inline instead, judged too small to be worth a hook at the time. A sibling idea - making the whole Assignment *field* (state, effects, and its own JSX) into a component - was considered and rejected: unlike every other field in `FormFields/`, it would need to reach into the parent form's own state (clearing `assignment_id` when the user backs out of `IN_TRANSIT`, deciding `isAssigning` from a sibling field's value), and a component boundary would hide that coupling rather than remove it. The hook only takes on the state that's genuinely self-contained; the JSX and the "when to fetch vs. when to clear" decision stay inline in `EditShipmentForm`, where the full story reads in one place. The options list is further filtered to assignments whose `clients` array already includes the shipment's own `client_name` - an assignment is a route for a specific set of clients, so one that doesn't include this shipment's client isn't a sensible target; not stated in the spec, another inferred business rule. This filter runs client-side, not as a server query - verified directly against the running json-server (not assumed) that its `_where`/`contains` operators return zero results against an array field even for a client genuinely present in it (`contains` is built for substring matching on strings, not array-element membership), and there's no operator here that does the latter. Doing it server-side for real would mean writing custom json-server middleware, which crosses into "building a real backend" - explicitly outside this exercise's scope per the spec's own assumptions. The assignments list is already small and fully fetched in one request regardless, so filtering the already-in-memory array is also just the simpler option, not only the available one.
-- **Assignment field: one slot, not two.** For an `IN_TRANSIT`/`DELIVERED` shipment, "Assignment" is permanently non-interactive in this app (nothing lets you edit it once a shipment isn't `OPEN`), so it stays plain text. For an `OPEN` shipment it's a single `<select>` that's `disabled` (and `required`) exactly while `isAssigning` (transitioning to `IN_TRANSIT`) is true, rather than a second "Assign To" field shown only sometimes - a genuinely state-dependent field gets a real disabled control, but a permanently-static one doesn't get a fake-editable-looking one just for visual uniformity. It also shows the assignment's name, not its raw id (`GET /assignments/:id`, resolved client-side) - the spec's own field table only exposes `assignment_id`, but a raw `"as_010"` in the UI is a worse experience than the human-readable label for no real reason.
-- **Save is only disabled while a save is in flight - not for validity, and not for "nothing changed" either.** This took a few iterations to land on (worth being upfront about, since a genuine dead end was part of getting here): mirroring native validity into a form-level `isValid` state, just to preemptively gray out Save, turned out to be a real source of bugs - `checkValidity()` called synchronously inside the same event that changes a field's own `disabled`/`required` (the Assignment field specifically, since its requirement depends on the Status field) sees the DOM as it was *before* React commits that change, so the mirrored state could read stale. A `revalidate()` escape hatch fixed it, and a plain `missingAssignment` boolean was tried as a DOM-independent alternative - both worked, but both were solving a problem that only existed because Save was being preemptively gated in the first place. Removing that entirely was the actual fix: `isDirty` is now checked as a no-op guard at the top of the submit handler instead of disabling the button (clicking Save with nothing changed simply does nothing), and field validity isn't tracked in JS at all - the browser's own pre-submit constraint validation blocks a real bad save regardless, using the same `setCustomValidity()` messages already wired up per field. This also means `useForm` doesn't hold any DOM ref or validity state - just `values`/`isDirty`/`handleSubmit`/`reset`.
-- **`:user-invalid` instead of `:invalid` for the red-border styling.** Plain `:invalid` fires the instant a required field is empty, mount included - fine for this Edit form since every field starts populated with a real value, but a real problem for the not-yet-built Create form, which starts with several required fields genuinely blank; `:invalid` would render it as a wall of red on first paint. `:user-invalid` matches the identical underlying validity but only once the user has interacted with the control - and per spec, an *attempted* form submission counts as interaction for every control in the form, not just the one the browser autofocuses. So a pristine form never shows red, and clicking Save on an invalid one lights up every wrong field simultaneously (not just the first), with no JS needed to make either half true.
-- **The browser's own native validation bubble is suppressed - `TextField`/`SelectField` both call `preventDefault()` on the `invalid` event.** That's the specific, cancelable default action for showing the tooltip; constraint validation itself and the block on submission are unaffected either way. Its message is shown in this app's own error `<span>` instead (populated from the same `event.currentTarget.validationMessage` the bubble would have used), so nothing is silently lost - including for `SelectField`, which didn't previously have an error span at all since it never needed one before this. Worth noting: per spec, the tooltip and the browser's autofocus-first-invalid-field behavior are the same reporting step, gated by the same "was `invalid` cancelled" check - suppressing one very likely suppresses the other too, a real trade against a UX perk that was deliberately kept in an earlier iteration.
-- **List refetch vs. patch after save.** A save that changes a shipment's `status` now triggers a full list refetch instead of a local patch - the list is always scoped to one status at a time, so a status change can move a shipment out of the currently-filtered group entirely, and a local patch/removal wouldn't correct `totalItems`/`totalPages` either. Non-status saves (`delivery_by_date`, `lat`, `lng`) still use the cheaper local patch, since those fields can't move a shipment out of its current status group.
-- **Delete lives on the detail panel, not the list row.** A per-row hover-reveal menu (three dots → a Delete button) was the first idea and got dropped before being built: the list row only shows client/label/arrival date, and deleting off that little context has the same "very easy to delete something wrong" risk already used to rule out bulk-delete - the detail panel shows every field first. It also avoids a real correctness wrinkle a row-level delete would've needed to handle explicitly: deleting the shipment currently open in the detail panel would otherwise leave it showing a shipment that no longer exists. From the detail panel, that's automatic - after a successful delete the app navigates to `/shipments` itself, since you're always deleting the one you're already looking at. Guarded by a plain native `confirm()` (irreversible action, simplest possible one-line guard, no custom modal needed) rather than reviving the two-step reveal-then-click pattern from the dropped design. Deleting always triggers the same list refetch as a status-changing save, for the same reason - `totalItems`/`totalPages` change too, not just patchable in place.
-- **Page clamping in `useShipments`.** The page the user's currently viewing can stop existing after any action that shrinks the result set - the status-refetch above being the concrete case today, but the same problem would hit a future delete too. Handled generally in the fetch effect's own success handler rather than bolted onto the status-change call site specifically: if the response reports fewer pages than the one just requested, `updateParams` clamps to the new last page, which drives one more fetch through the same effect rather than rendering a page that no longer reflects reality (or, at the extreme, an empty result set for a page number past the end).
-- **No data-fetching library (TanStack Query, etc.), reconsidered and still declined.** By this point in the app there's a real amount of hand-rolled fetch/abort/loading/error boilerplate (`useShipments`, the shipment-by-id fetch, the assignment-list and assignment-label fetches), and a library like TanStack Query would remove most of it - built-in cancellation, caching, and dedup would have solved some of the exact friction hit tonight (e.g. the assignments list refetching per shipment) for free. Declined anyway: the original reasoning for hand-rolling (every line needs to be explainable live, and TanStack Query isn't a library already known well enough to do that with) hasn't changed, and adopting it now would mean touching every fetch site in the app under time pressure, not just the two that are currently annoying. Noted here as the honest answer to "what would you change with more time," rather than made into a late, partial, inconsistent swap.
-- **Failed assignment-list fetch shown inline, not via a toast.** A hand-rolled toast/notification system was actually built for this at one point (a `ToastProvider`/`useToast()` Context, mounted at the app root) and then deliberately removed - it's not asked for at any tier of the spec, the failure it was solving is minor (the picker just shows no options, not broken, not data loss), and it would have introduced a second, inconsistent error-display paradigm alongside the inline pattern already used everywhere else in this app (`saveError`, the list's fetch-error-with-retry). The actual fix reuses that existing convention instead: an `assignmentsError` state folded into the same placeholder text that already branches on loading/empty, one line, no new component. In a real production app with more error surfaces across more of the UI, a toast system would likely earn its place - it just doesn't clear that bar for one isolated edge case in a take-home.
-- **Create/Save success confirmation uses the native Popover API, not the reverted toast system.** Different situation from the point above: this genuinely has two real call sites (`EditShipmentForm`'s Save, `ShipmentExplorer`'s Create) with no existing inline convention to reuse the way the assignment-fetch error did. `<div popover="auto">`, shown/hidden imperatively via `showPopover()`/`hidePopover()`, is the closest native equivalent to a toast - top-layer rendering (visible above a modal `<dialog>`'s own backdrop, relevant since Create's success needs to show *after* its dialog closes), light-dismiss built in, no z-index management. It's a small, local, reusable presentational component (`SuccessToast`), not app-wide Context/Provider infrastructure - the distinction that made the earlier toast system the wrong call doesn't apply here. Create's confirmation specifically lives in `ShipmentExplorer`, not inside `CreateShipmentDialog` itself, since the dialog unmounts the instant it closes (conditionally rendered on `isOpen`) - anything shown from inside it would disappear along with the rest of the dialog before it could be seen.
-- Map is showing saved co-ords instead of jumping around on change before save.
-- **Create is a native `<dialog>`, not a reuse of the detail panel's layout.** Considered and rejected early on - the detail panel's markup is heavily shaped around Edit-specific concerns (the status/assignment machinery, static display of server-owned fields) that don't apply to a brand-new shipment, and past experience trying to make one form serve both modes was specifically why this route was picked instead. `showModal()`/`.close()` are called imperatively from a `useEffect` reacting to an `isOpen` prop, guarded by checking `dialog.open` first so a duplicate open/close (e.g. React re-running the effect) can't throw - native `<dialog>` gets focus trapping, Escape-to-close, and top-layer/backdrop rendering for free from the browser, the same "trust the platform" instinct already used for `<input type="date">` and the rest of the form's validation.
-- **7 of the ~9 Shipment fields are asked for in the Create dialog** (`label`, `client_name`, `warehouse_id`, `arrival_date`, `delivery_by_date`, `lat`, `lng`, in that order - `label`/`client_name` first since those are what a person scans for, `warehouse_id` grouped with them as another plain identifying text field); only `status` and `assignment_id` are true defaults, not fields, because they're the only two that are *true by construction*: a newly-created shipment is always `OPEN` (the only sensible point in the lifecycle to create one at - an already-`IN_TRANSIT` shipment would need an `assignment_id` that doesn't exist yet), and `OPEN` shipments never have an `assignment_id`. `eta` is also defaulted (mirrors `delivery_by_date`, since there's no separate estimate to go on and it's never shown/edited anywhere in this app regardless), but that one's a genuine judgment call, not a fact, documented separately above.
-- **`warehouse_id`, `lat`, and `lng` all start blank, with no pre-filled guess - including `warehouse_id`, reconsidered from an earlier draft that defaulted it to `"581"`.** The distinction that matters: `status`/`assignment_id`/`arrival_date`'s defaults are true by construction or the obviously-correct choice absent a reason otherwise ("now", for something being logged in the moment). `"581"` is not that, on reflection - every sample shipment sharing it is far more likely a generator-script shortcut (the domain clearly implies multiple warehouses, given the multi-airport-code `label` examples like `LAX-581-...`) than a real fact about where a new shipment arrives, the same way the sample data's lat/lng bounding box doesn't represent anything real about where deliveries actually happen. Treating a value as "the default" when it's really just "the only value a lazy generator ever produced" would have been presenting a guess as a fact. All three are now plain required text fields with no pre-fill, the same treatment as `client_name`/`label` - genuinely unknowable in advance, not defaultable.
-- **`label` is free text in Create, not auto-generated to match the sample pattern.** Every generated sample label follows the same shape - `[airport code]-[warehouse id]-[date-looking digits]-[sequence number]`, e.g. `LAX-581-250521-6` - but that's an artifact of `scripts/generate-data.cjs`'s own formula, not a format specified anywhere in the spec (the field table gives it as a single illustrative example, not a pattern or regex to conform to). Reverse-engineering and enforcing that exact shape for user-created shipments would be inventing a constraint the spec never asked for; left as a plain required text field instead, same as `client_name`.
-- **`client_name` is free text too, not a dropdown of existing clients.** Ideally this would work like the assignment picker - show existing client names to pick from rather than risk typo'd variants of the same client (`"Sony"` vs `"sony"`) - but unlike assignments, there's no dedicated collection to query for that; it would mean fetching and de-duplicating `client_name` across all shipments (or a comparable endpoint that doesn't exist), a real, non-trivial addition rather than reusing something already built. Left free-text and noted here rather than built, given the same "not in scope" reasoning already applied to the warehouse dropdown and server-side assignment filtering.
-- **`eta` defaults to `delivery_by_date`, not randomized like the generator does.** Checked the generator directly rather than guessing: it sets `eta` to `arrival_date` plus a random 0-48 hours, with no relationship to `delivery_by_date` at all - there's no discoverable rule to replicate here, just arbitrary noise baked into the sample data. Since `eta` isn't shown or edited anywhere in this app (Core's detail-panel field list excludes it, and it's never surfaced in Create either), any default is equally unverifiable to a user - deliberately injecting fake randomness into a real create flow just to imitate the generator's own arbitrary choice seemed worse than picking one deterministic, at least-coherent value (delivery deadline, in the absence of a better estimate) and moving on.
-- **Create reuses `useForm` and the same `TextField`/native-validation architecture as Edit**, deliberately not a separate validation approach - same reasoning as the original "why hand-roll instead of a library" decision, now doubly true since a second form is exactly the case that would have exposed an inconsistent pattern. It's also the scenario `:user-invalid` (vs. plain `:invalid`) was specifically chosen for a few iterations back: every field in this dialog starts blank and required, so this is where that choice actually pays off - the dialog opens with no red anywhere, and only lights up the fields that are actually wrong once a create is attempted. The Create button is gated only by `isCreating` (mid-request), matching Edit's Save button - not `isDirty` (every create is "new data" by definition, the concept doesn't really apply) and not a mirrored validity state (same reasoning as Edit: the browser's own pre-submit check is what actually blocks a bad create, and nothing here needs to know that ahead of time).
-- **Creating a shipment refetches the list only if the current status filter is `OPEN`.** A new shipment always starts `OPEN`, so it can only ever be visible in that filtered view - refetching while viewing `IN_TRANSIT`/`DELIVERED` would just re-request the same data for no visible change.
-- **The open-assignments fetch refetches every time a shipment moves toward `IN_TRANSIT`, with no "already fetched, skip it" cache.** An earlier version guarded against refetching by checking `assignments.length > 0`/`assignmentsLoading` inside the same effect that sets them - which needed a `react-hooks/exhaustive-deps` disable comment (the guard reads state the effect itself just set, so it can't honestly appear in the effect's own dependency array) plus a `useRef`-held `AbortController` to survive across renders untouched by that self-referential dependency problem. Simplified instead: the effect depends only on `isAssigning` and always fetches fresh when it flips to `true`, cancelling via a plain `return () => controller.abort()` on the same effect - no disable comment, no ref anywhere in this component. The cost is a real one: toggling `OPEN → IN_TRANSIT → OPEN → IN_TRANSIT` within one edit session refetches instead of reusing the first result. Judged not worth optimizing for a take-home - that repeat-toggle pattern is rare in practice, and always fetching fresh is arguably *more* correct anyway (an assignment could genuinely close between toggles), not just a simpler-but-worse trade.
-- **The status filter's options are a hardcoded client-side list, not fetched from `GET /statuses`, despite that endpoint being spec'd.** Checked what it actually returns rather than assuming: `[{id:"OPEN"},{id:"IN_TRANSIT"},{id:"DELIVERED"}]` - an unlabeled 1:1 mirror of the `ShipmentStatus` union already required client-side for `STATUS_LABELS` and the valid-transition rules (`OPEN → IN_TRANSIT`, etc.), which the endpoint doesn't expose at all. Fetching it would add a network round-trip and a loading state to reproduce information the client can't avoid hardcoding anyway - the mock backend has no validation layer to make `/statuses` authoritative over (a bad `PUT` isn't rejected either), so pointing the filter at it would be a fake integration, not a real one. `useStatuses`/`fetchStatuses`/`StatusOption` were built, then removed once this became clear; `ShipmentFilters` now iterates `Object.keys(STATUS_LABELS)` directly. In a real production system this data (and the "assignment_id required to move to IN_TRANSIT" rule) should live server-side as validated writes, ideally exposed per-resource (e.g. `shipment.allowed_transitions`) rather than a static client-side table - the client would still keep a local copy for instant UI feedback (disabling/graying fields without a round trip), but as a mirror of server-owned logic, not the source of truth for it.
+```bash
+npx json-server shipments.json   # mock API on http://localhost:3000
+```
 
-### Implementation Decisions & Trade-offs
+```bash
+npm run dev                      # app on http://localhost:5173
+```
 
-### Additions & Considerations
+`shipments.json` is committed, so the mock API has data immediately — you don't need
+to run the generator. To point the app at a different API URL, set
+`VITE_API_BASE_URL`.
+
+> The exercise PDF shows `json-server --watch shipments.json --port 3001`. This
+> project pins json-server v1, whose CLI dropped `--watch` (watching is the default)
+> and serves on port 3000 — which is the app's default API URL.
+
+To regenerate the sample data (random each run — counts, coordinates, and assignment
+links all change):
+
+```bash
+node scripts/generate-data.cjs
+```
+
+### Other scripts
+
+- `npm run build` — typecheck + production build
+- `npm run lint` — ESLint
+- `npm test` — Vitest
+
+## Tech stack
+
+- **React 19 + TypeScript + Vite**, with the **React Compiler** babel plugin handling
+  memoization (hence almost no manual `useMemo` / `useCallback`).
+- **react-router-dom** — routing and URL-driven selection.
+- **axios** — one shared instance with a request timeout and a response
+  interceptor that normalizes timeout, 404, and 5xx errors into one friendly
+  `Error` each.
+- **react-leaflet / Leaflet** — the detail-panel map.
+- **lodash `debounce`** — the search input.
+- **CSS Modules** — no UI component library.
+- **No data-fetching library** and **no form library** — both hand-rolled; see
+  Assumptions.
+
+## Architecture
+
+```
+lib/http  →  services/*  →  hooks  →  container components  →  FormFields/* (presentational)
+```
+
+- `ShipmentExplorer` owns the list query state (`useShipments`), the create-dialog
+  flag, and reads the selected shipment id from the route. `ShipmentList` and
+  `ShipmentDetails` are handed everything they need as props.
+- `ShipmentDetails` fetches the selected shipment by id independently — it never
+  reads a row out of the loaded list page, so list and detail stay decoupled (the
+  list query could later be trimmed to fewer fields without breaking the detail
+  view).
+- `useForm<T>` is a minimal values / dirty / submit container shared by the edit and
+  create forms.
+
+## Features
+
+**Core**
+
+- Two-panel list / detail layout
+- List rows: client, label, arrival date; click to open the detail panel
+- Status filter + debounced search on label / client name
+- Server-side pagination (25 per page) — no client-side filtering, sized for the
+  "100k+ shipments" requirement
+- Detail panel shows every spec'd field; edits `delivery_by_date`, `lat`, `lng`;
+  saves via `PUT`
+
+**Stretch**
+
+- Status transitions with valid-target enforcement and an assignment picker for
+  `OPEN → IN_TRANSIT`
+- Leaflet map with the shipment's location pin
+- Create (modal dialog) and delete (detail panel, `confirm()`-guarded)
+
+## Assumptions & trade-offs
+
+Where the spec is ambiguous, a reasonable assumption was made and is recorded here.
+
+### Data & domain
+
+- **"Grouped by status" is read as a single-status filter.** The spec doesn't
+  prescribe a UI. Filtering to one status at a time (a dropdown) keeps each view to
+  one paginated query; three columns or a merged list would each need their own
+  pagination.
+- **Selection lives in the URL** (`/shipments/:id`), not component state — shareable,
+  survives refresh, and is the natural key for the detail fetch.
+- **Search matches `label` OR `client_name`** by case-insensitive substring.
+  json-server v1 removed the `q=` param, so the query is built as a `_where` clause
+  using `contains`; with no search term it carries just the status filter.
+- **The sample data has no assignments** and the generator never sets
+  `assignment_id`. `scripts/generate-data.cjs` was extended to create ~40
+  assignments and link realistic `assignment_id`s onto `IN_TRANSIT` / `DELIVERED`
+  shipments, so the `OPEN → IN_TRANSIT` flow has something real to pick.
+- **`GET /statuses` is not used** even though it's spec'd. It returns an unlabeled
+  1:1 mirror of the `ShipmentStatus` enum — no labels, no transition rules — all of
+  which the client hardcodes anyway (`STATUS_LABELS`, the transition table).
+  `ShipmentFilters` iterates `Object.keys(STATUS_LABELS)` directly. In a real system
+  the transition rules belong server-side (ideally per-resource, e.g.
+  `shipment.allowed_transitions`), with the client keeping a mirror for instant
+  feedback.
+
+### Dates
+
+- **`delivery_by_date` is treated as a day-granular deadline.** It's stored as a
+  full ISO datetime, but the spec frames it as a deadline and provides a separate
+  `eta` for the estimated time. It's edited as a date; on save the time is
+  normalized to `T00:00:00.000Z`, so an existing record's original time-of-day is
+  lost on the first edit. `eta` is never shown or edited.
+- **`delivery_by_date` must be on or after `arrival_date`** — enforced with a
+  dynamic `min` on the date input; the same day is allowed.
+
+### Forms & validation
+
+- **Hand-rolled form state, no Formik / React Hook Form.** The editable surface is
+  small (3 fields in Edit, 7 in Create) and every decision needs to be explainable
+  in the follow-up. `useForm` holds `values`, `isDirty`, and a `handleSubmit`
+  wrapper.
+- **`lat` / `lng` are `type="text"` + `inputMode="decimal"`, not `type="number"`.**
+  A native number input's `.value` getter collapses an unparseable in-progress
+  keystroke (a lone `-`, a trailing `.`) to `""` before any JS runs; combined with
+  `Number("") === 0` that would silently rewrite the field to `0` mid-type — common
+  when entering a negative coordinate (verified in a browser). Instead the draft
+  stores the raw string, a range check feeds `setCustomValidity()` in place of
+  native `min` / `max`, and the string is parsed to a number only when building the
+  request body. A form library wouldn't have helped — `valueAsNumber` /
+  `setValueAs` sit on top of the same broken `.value`.
+- **Validity is the browser's job; Save and Create are never pre-disabled for it.**
+  The buttons disable only while a request is in flight. The browser's pre-submit
+  constraint validation blocks a bad save using the per-field `setCustomValidity()`
+  messages. No form-level `isValid` is mirrored into JS — an earlier attempt to do
+  that for a disabled-button effect read stale (`checkValidity()` inside the same
+  event that flips a field's `required` sees the pre-commit DOM) and was removed
+  rather than patched.
+- **A pristine (unchanged) Edit save is a guarded no-op** — the submit handler
+  returns early, skipping a redundant `PUT`.
+- **`:user-invalid`, not `:invalid`, for the red-border style.** `:invalid` flags an
+  empty required field on mount — fine for Edit (fields start populated), a wall of
+  red for Create (fields start blank). `:user-invalid` matches the same validity but
+  only after the user has changed-and-blurred a field or attempted a submit (which
+  counts as interaction for every field), so a pristine form shows no red and a
+  blocked submit lights up every wrong field at once.
+- **The native validation bubble is suppressed** — `TextField` / `SelectField` call
+  `preventDefault()` on the `invalid` event and render `validationMessage` in their
+  own `<span>` for consistent styling. Constraint validation and the submit block
+  are unaffected; the browser's auto-focus of the first invalid field is likely
+  suppressed as a side effect of the same cancel.
+
+### Status transitions & assignments
+
+- **The status dropdown lists only the current status plus its valid targets**
+  (`OPEN → IN_TRANSIT`, `IN_TRANSIT → DELIVERED`, `IN_TRANSIT → OPEN`). `DELIVERED`
+  is terminal — its dropdown is a single disabled option. `IN_TRANSIT → OPEN` clears
+  `assignment_id` on save, with an inline note so it isn't a silent loss.
+- **`OPEN → IN_TRANSIT` requires an assignment.** Two inferred rules, not spec'd: the
+  picker lists only `OPEN` assignments (a `COMPLETED` route has finished), and only
+  those whose `clients` include the shipment's `client_name` (an assignment serves a
+  specific client set). The client filter runs in memory — json-server's `contains`
+  does string substring matching, not array membership (verified) — and the
+  assignments list is small and fetched whole anyway.
+- **Assignment options are fetched lazily and re-fetched each time.** An effect keyed
+  on the `OPEN → IN_TRANSIT` transition fires the request (not on every OPEN detail
+  view), aborting if the user navigates away first. Toggling the transition off and
+  on re-fetches rather than caching — rare in practice, and arguably more correct
+  since an assignment could close between toggles.
+- **The Assignment field is one slot.** `IN_TRANSIT` / `DELIVERED`: plain read-only
+  text (nothing in this app reassigns a non-OPEN shipment). `OPEN`: a single
+  `<select>`, enabled and `required` only while transitioning to `IN_TRANSIT`,
+  rather than a separate conditionally-shown "Assign to" field. It shows the
+  assignment's label (resolved via `GET /assignments/:id`), not the raw `as_0xx` id.
+- **`AssignmentField` is its own component** (state + fetch + JSX), taking
+  `{ shipment, status, assignmentId, onAssignmentIdChange }`. The cross-field
+  coupling is kept explicit rather than hidden: `status` is passed in as a prop, and
+  clearing `assignment_id` when the Status dropdown leaves `IN_TRANSIT` lives in the
+  parent form's `handleStatusChange`, not the field.
+
+### List ↔ detail consistency
+
+- **No optimistic list update.** The list's copy of a shipment is patched once,
+  after a save succeeds, with the server's response. An earlier
+  optimistic-patch-and-rollback was removed — none of the editable fields
+  (`delivery_by_date`, `lat`, `lng`) appear in the list row, so it was patching
+  something nothing displayed.
+- **A status-changing save re-fetches the whole list; other saves patch in place.**
+  A status change can move a row out of the current filter and changes `totalItems`
+  / `totalPages` — a local patch handles neither. Field edits can't move a row
+  between groups.
+- **A delete re-fetches the list** for the same reason, then navigates back to
+  `/shipments`.
+- **The current page is clamped if it stops existing.** After any result-shrinking
+  action, the list fetch detects `page > totalPages` in its response and re-requests
+  the new last page.
+
+### Create & delete
+
+- **Create is a native `<dialog>`, not a reworked detail panel.** The detail panel's
+  markup is shaped around Edit concerns (status / assignment machinery, read-only
+  server fields). The dialog is conditionally mounted, so each open starts from a
+  fresh blank form; `showModal()` is called imperatively (native `<dialog>` gives
+  focus trapping, Escape-to-close, and backdrop rendering for free).
+- **Create collects 7 of the ~10 fields** (`label`, `client_name`, `warehouse_id`,
+  `arrival_date`, `delivery_by_date`, `lat`, `lng`). `status` (`OPEN`) and
+  `assignment_id` (`null`) are true-by-construction, not fields. `eta` is defaulted
+  to `delivery_by_date` — the generator sets it to `arrival + random hours` with no
+  reproducible rule, and it's never surfaced here.
+- **`arrival_date` and `delivery_by_date` default to today; everything else starts
+  blank.** `warehouse_id`, `label`, and `client_name` are plain required text with
+  no pre-fill: `warehouse_id: "581"` and the `LAX-581-250521-6` label shape are
+  generator artifacts, not spec formats (the domain implies multiple warehouses). A
+  client dropdown (like the assignment picker) would beat free text, but there's no
+  client collection to query.
+- **POST server-generates the `id`** — new shipments don't get the `shp_0xx` shape.
+- **Delete lives on the detail panel, behind `window.confirm()`.** Not a per-row
+  action — a row shows too little context to delete safely from, and deleting the
+  shipment you're currently viewing would strand the panel (from the detail view,
+  the app navigates away itself).
+- **Creating a shipment re-fetches the list only when the filter is `OPEN`** — a new
+  shipment is always `OPEN`, so it can't appear in an `IN_TRANSIT` / `DELIVERED`
+  view.
+
+### UI
+
+- **The map shows the last saved coordinates, not in-progress edits** — editing
+  `lat` / `lng` doesn't move the pin until the save lands. Either reading is
+  defensible; this keeps the map a view of persisted state.
+- **Save / Create success is confirmed with a small toast** built on the native
+  Popover API (`popover="manual"`, `showPopover()`/`hidePopover()`), rendered in the
+  top layer so Create's confirmation is visible after its dialog closes. `"manual"`,
+  not `"auto"` — `"auto"` light-dismisses on any outside click, including the very
+  Save button that re-triggers it, which closed the toast via the browser before the
+  next `setSuccessMessage` call could reopen it (same string in, no state change, no
+  re-run). It's a local presentational component, not app-wide toast infrastructure.
+- **404 and 5xx responses are normalized centrally**, in the same `httpClient`
+  response interceptor that already turns a timed-out request into a friendly
+  `Error`. Every call site already does `err instanceof Error ? err.message : "..."`,
+  so this needed no call-site changes — a deleted-elsewhere shipment or a server
+  error now surfaces a readable message everywhere for free. A network failure with
+  no response at all (server not running, CORS, DNS) isn't normalized the same way —
+  axios's own message for that case is reasonably clear already, and it wasn't what
+  was asked for.
+- **A failed assignment-list fetch is shown inline** (folded into the picker's
+  placeholder text), consistent with the list's inline fetch-error and the form's
+  save-error — deliberately not a toast / notification system.
+- **Fixed light theme** — no dark mode or theme switching.
+
+### Testing
+
+- **No test suite.** Not required at any tier. Vitest is configured; the pure
+  business-rule functions (`buildWhere`, `validateNumberInRange`,
+  `getStatusDropdownOptions`, `toApiDateTime`) would be the first to cover with more
+  time.
+
+### With more time
+
+- **A data-fetching library (TanStack Query).** There's now a real amount of
+  hand-rolled fetch / abort / loading / error code (`useShipments`, the detail
+  fetch, the two assignment fetches) that it would mostly remove, along with the
+  assignment re-fetch friction. Declined for now: every line has to be explainable
+  live, and swapping it in would touch every fetch site under time pressure.
+- **Nested routes.** Selection is already URL-driven, but the routing is two flat
+  routes both rendering `ShipmentExplorer`. Nested routes with `<Outlet>` would be
+  cleaner and would extend to the Extra Credit assignment page's drill-down.
