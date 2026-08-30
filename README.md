@@ -1,4 +1,4 @@
-# Shipment Management UI
+# Shipment Management
 
 A two-panel shipment management tool: a paginated, searchable, status-filtered list on the left, and a detail / edit panel on the right.
 
