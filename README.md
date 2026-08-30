@@ -126,7 +126,11 @@ Where the spec is ambiguous, a reasonable call was made and recorded here.
 
 ## Testing
 
-- **43 tests, all on the pure logic** : the `_where` query builder, URL-param read / write / merge, coordinate-range validation. These are the spots where a wrong answer is silent (zero rows that read as "no results", a filter quietly dropped, whitespace saved as coordinate `0`), not a visible break.
+- **43 unit tests on the pure logic**: the `_where` query builder, URL-param read / write / merge, coordinate-range validation, status-transition rules. These are the spots where a wrong answer is silent (zero rows that read as "no results", a filter quietly dropped, whitespace saved as coordinate `0`), not a visible break.
+- **3 component tests, RTL + a mocked `httpClient`:**
+  - **List**: search (debounced), status filter, pagination, and selecting a row — against `ShipmentExplorer` end to end.
+  - **Edit**: one shipment driven through `IN_TRANSIT → OPEN → IN_TRANSIT → DELIVERED`, editing `delivery_by_date` / `lat` / `lng` alongside the status changes, then deleted. Asserts the exact `PUT` body at each step (assignment cleared on `unassigning`, set on `assigning`, carried forward on a plain status change), and that Save is a no-op both while the assignment picker is still loading and with an out-of-range coordinate — the two validation-bypass fixes from this session, pinned so they can't regress silently.
+  - **Create**: fills the dialog, submits, and confirms the app navigates to the new shipment's own detail view.
 
 ## Extra Credit seams 
 
