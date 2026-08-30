@@ -45,17 +45,21 @@ const ShipmentDetails = ({
     const controller = new AbortController();
     setIsLoading(true);
 
-    fetchShipmentById(selectedId, controller.signal)
-      .then(setShipment)
-      .catch((err) => {
+    const load = async () => {
+      try {
+        const fetched = await fetchShipmentById(selectedId, controller.signal);
+        setShipment(fetched);
+      } catch (err) {
         if (controller.signal.aborted) return;
         setError(
           err instanceof Error ? err.message : "Failed to load shipment",
         );
-      })
-      .finally(() => {
+      } finally {
         if (!controller.signal.aborted) setIsLoading(false);
-      });
+      }
+    };
+
+    load();
 
     return () => controller.abort();
   }, [selectedId]);

@@ -108,30 +108,28 @@ Where the spec is ambiguous, a reasonable call was made and recorded here.
 
 ## Trade-offs and decisions
 
-- **No Extra Credit.** Core and Stretch are built. Where a design choice had two sound answers and one extended more cleanly toward the assignment page, that one
-  was taken (see **Extra Credit seams**).
-- **All view states in one query string, on one route.**
-  `/shipments?selected=…&status=…&q=…&page=…`. Considering that all the states can be stored on a URL, there's no need for a Context or a global state management store. This also tracks for
-  the Assignment page.
-- **`GET /statuses` unused despite being spec'd.** It returns an unlabeled mirror of the `ShipmentStatus` enum — which I am hard-coding on client, due to the transition rules not being available on the backend.
+- **No Extra Credit.** Core and Stretch are built. Where a design choice had two sound answers and one extended more cleanly toward the assignment page, that one was taken (see **Extra Credit seams**).
+- **All view states in one query string, on one route.** `/shipments?selected=…&status=…&q=…&page=…`. Considering that all the states can be stored on a URL, there's no need for a Context or a global state management store. This also tracks for the Assignment page. `status` and `page` are always written, even at their defaults (`?status=OPEN&page=1`, not a bare `/shipments`) — you're always looking at exactly one status and one page, so the URL should say which. `q` is the exception: an empty search means nothing's applied, so the key is dropped rather than written as `q=`.
+- **`GET /statuses` unused despite being spec'd.** It returns an unlabeled mirror of the `ShipmentStatus` enum — which I am hard-coding on client already (the transition rules require it to be hardcoded).
 - **No data-fetching library (TanStack Query et al.), and no response caching.** A query library's core value is a shared cache that many views read from and that gets reconciled after each mutation. This app doesn't have that shape, and the caching itself would mostly be wrong here:
   - **Nothing shares a cache.** The detail panel fetches by id and never reads from the list, so there is no list↔detail copy to keep in sync.
   - **The list and picker must stay live.** Given the shape of the spec and the domain (a continuous stream of shipments might be created throughout the day), data should not be stale. Shipments list and assignment list are fetched fresh every time.
   - **Serving a stale detail would be a lost-update risk.** The edit form seeds from the detail fetch; a fresh read each time is what guarantees you can't Save over a concurrent edit with an old base.
-  - **The rest is already handled or small.** Cancellation is an `AbortController` per effect; the four fetch sites don't overlap, so there's nothing to dedup; the loading / error scaffolding a library removes is ~10 lines.
+  - **The rest is already handled or small.** Cancellation is an `AbortController` per effect; the four fetch sites don't overlap, so there's nothing to dedup; the loading / error scaffolding is tiny.
 - **Hand-rolled form state — no Formik, React Hook Form, or Zod.**
   - **Forms are small.** Five editable fields in Edit, seven in Create. `useForm` is `values` / `isDirty` / `handleSubmit` in ~40 lines.
   - **The browser validates inline and on submit.** Native constraint validation plus per-field `setCustomValidity()` messages block a bad submit. Save / Create disables only while a request is in flight.
-  - `lat`/`lng` are handled using `text` fields and parsed afterwards, as `number` fields would cast input to `number` (e.g. (`-`, `.`) as `""`, and `Number("")` is `0`), causing issues.
-- **No list-patching.** No editable fields are ever shown on the shipments list, therefore I decided to forgo patching. Only status change / delete would refetch the list (because these actions
-  alter the list itself instead of modifying a shipment). If the list shows editable fields like Delivery Date, however, optimistic patching should be implemented.
+  - `lat`/`lng` are handled using `text` fields and parsed afterwards, as `number` fields would parse value mid-input (e.g. (`-`, `.`) as `""`, and `Number("")` as `0`), causing issues.
+- **No list-patching.** No editable fields are ever shown on the shipments list, therefore I decided to forgo patching. Only status change / delete would refetch the list (because these actions alter the list itself instead of modifying a shipment). If the list shows editable fields like Delivery Date, however, optimistic patching should be implemented.
 - **`clients` / `shipment_count` are read, never written.** They're server-derived aggregates over an assignment's shipments (see Assumptions).
 
 ## Testing
 
 - **39 tests, all on the pure logic** : the `_where` query builder, URL-param read / write / merge, coordinate-range validation. These are the spots where a wrong answer is silent (zero rows that read as "no results", a filter quietly dropped), not a visible break.
 
-## Extra Credit seams
+## Extra Credit seams 
+
+Extra Credit was not implemented, but these keep it simple enough if I do.
 
 - **`react-router-dom` for one route.** View state could have been component state, but Extra Credit's `/assignments` needs real routing — putting state in the URL now makes that page a route to add, not a model to redesign.
 - **`ShipmentDetails` takes `selectedId` as a prop, never reads the URL.** EC's panel 3 is this same detail, reached from an assignment. Reading the id in `ShipmentExplorer` and passing it down — with `clearSelection` for the post-delete case — keeps the panel reusable wherever an id comes from.
@@ -141,7 +139,7 @@ Where the spec is ambiguous, a reasonable call was made and recorded here.
 
 ## As the feature set grows
 
-If this is a real production app, with growth in features and complexity, these should be implemented:
+In a longer-lived or larger app, these become worth doing:
 
 - **Optimistic list patches:** first thing to add when a list row starts showing an editable field (panel 2's shipments in the assignment page, a status badge on the main list) or the API gets slow enough that refetch-on-save feels laggy.
 - **Server-state management library (e.g. `TanStack Query`):** adds server-state cache, mutations, and observations, and standardizes behavior among API queries.
@@ -149,3 +147,10 @@ If this is a real production app, with growth in features and complexity, these 
 - **Form and validation library (e.g.RHF + Zod):** past ~10 create fields, or once cross-field rules multiply, or when a validation schema needs sharing with the backend. At 5–7 fields with native validation it's overhead.
 - **Server-owned rules:** transitions and the assignment-required rule sit in a client table only because the mock backend has no validation layer. In production, they should be server-enforced, with the client holding a copy for instant feedback. Same for `clients` / `shipment_count`.
 - **HTTP caching:** a real backend sending `ETag` / `Last-Modified` lets single-resource GETs come back as `304 Not Modified` when nothing's changed.
+
+## Improvements
+
+Some workarounds / imperfections / missing features that could have been improved given better judgement / ample time:
+
+- **Data-router mode (`createBrowserRouter` + `loader`s / `action`s).** Currently `setSearchParams` needs to be put in a `ref` because it is re-created every time navigation happens. A route `loader` ties a fetch to a navigation and supersedes a stale one for free.
+- Keyboard handlers for the list (e.g. up/down for navigation between rows, enter to select shipment).

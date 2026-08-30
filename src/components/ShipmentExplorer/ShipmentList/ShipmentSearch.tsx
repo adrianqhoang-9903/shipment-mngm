@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useNavigationType } from "react-router-dom";
 import debounce from "lodash.debounce";
 import { SEARCH_DEBOUNCE_MS } from "../../../constants";
 import styles from "./ShipmentSearch.module.css";
@@ -10,20 +11,15 @@ interface ShipmentSearchProps {
 
 const ShipmentSearch = ({ query, onSearch }: ShipmentSearchProps) => {
   const [value, setValue] = useState(query);
-  const [lastEmitted, setLastEmitted] = useState(query);
-  
-  if (query !== lastEmitted) {
-    setLastEmitted(query);
+  const navigationType = useNavigationType();
+
+  useEffect(() => {
+    if (navigationType !== "POP") return;
     setValue(query);
-  }
+  }, [query, navigationType]);
 
   const debouncedSearch = useMemo(
-    () =>
-      debounce((next: string) => {
-        const normalized = next.trim();
-        setLastEmitted(normalized);
-        onSearch(normalized);
-      }, SEARCH_DEBOUNCE_MS),
+    () => debounce((next: string) => onSearch(next.trim()), SEARCH_DEBOUNCE_MS),
     [onSearch],
   );
 

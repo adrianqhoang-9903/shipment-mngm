@@ -17,7 +17,7 @@ export const URL_PARAMS = {
   page: "page",
 } as const;
 
-export const DEFAULT_SHIPMENT_LIST_PATH = "/shipments?status=OPEN";
+export const DEFAULT_SHIPMENT_LIST_PATH = "/shipments?status=OPEN&page=1";
 
 export const DEFAULT_SHIPMENT_LIST_QUERY: ShipmentListQuery = {
   status: "OPEN",

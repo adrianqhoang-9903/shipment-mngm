@@ -56,12 +56,21 @@ const AssignmentField = ({
     if (!assignmentId) return;
 
     const controller = new AbortController();
-    fetchAssignmentById(assignmentId, controller.signal)
-      .then((assignment) => setAssignmentLabel(assignment.label))
-      .catch(() => {
+
+    const load = async () => {
+      try {
+        const assignment = await fetchAssignmentById(
+          assignmentId,
+          controller.signal,
+        );
+        setAssignmentLabel(assignment.label);
+      } catch {
         if (controller.signal.aborted) return;
         setAssignmentLabel(assignmentId);
-      });
+      }
+    };
+
+    load();
 
     return () => controller.abort();
   }, [shipment.assignment_id]);
@@ -72,17 +81,22 @@ const AssignmentField = ({
     const controller = new AbortController();
     setAssignmentsLoading(true);
     setAssignmentsError(null);
-    fetchOpenAssignments(controller.signal)
-      .then(setAssignments)
-      .catch((err) => {
+
+    const load = async () => {
+      try {
+        const fetched = await fetchOpenAssignments(controller.signal);
+        setAssignments(fetched);
+      } catch (err) {
         if (controller.signal.aborted) return;
         setAssignmentsError(
           err instanceof Error ? err.message : "Failed to load assignments",
         );
-      })
-      .finally(() => {
+      } finally {
         if (!controller.signal.aborted) setAssignmentsLoading(false);
-      });
+      }
+    };
+
+    load();
 
     return () => controller.abort();
   }, [isAssigning]);

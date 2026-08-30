@@ -103,19 +103,21 @@ describe("mergeListParams", () => {
     expect(next.get("selected")).toBe("shp_42");
   });
 
-  it("strips a default page but keeps the default status", () => {
+  it("writes status and page even at their defaults - only query is stripped when empty", () => {
     const next = mergeListParams(params("status=IN_TRANSIT&page=4"), {
       status: "OPEN",
       page: 1,
     });
 
-    expect(next.toString()).toBe("status=OPEN");
+    expect(next.get("status")).toBe("OPEN");
+    expect(next.get("page")).toBe("1");
   });
 
-  it("writes the default status into a query string that has none", () => {
-    expect(mergeListParams(params(""), { status: "OPEN" }).get("status")).toBe(
-      "OPEN",
-    );
+  it("writes the default status and page into a query string that has neither", () => {
+    const next = mergeListParams(params(""), { status: "OPEN", page: 1 });
+
+    expect(next.get("status")).toBe("OPEN");
+    expect(next.get("page")).toBe("1");
   });
 
   it("trims the query before it reaches the URL", () => {

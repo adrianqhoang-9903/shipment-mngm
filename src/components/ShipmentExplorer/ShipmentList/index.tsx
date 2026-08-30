@@ -25,9 +25,8 @@ const ShipmentList = ({
   onSelectShipment,
   openCreateShipment
 }: ShipmentListProps) => {
-  // Replace, not push: a debounced keystroke shouldn't cost a Back press.
   const handleSearch = (query: string) => {
-    updateParams({ query, page: 1 }, { replace: true });
+    updateParams({ query, page: 1 });
   };
 
   const handleStatusChange = (status: ShipmentStatus) => {

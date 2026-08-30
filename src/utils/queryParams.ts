@@ -60,12 +60,10 @@ export const mergeListParams = (
     next = withParam(next, URL_PARAMS.query, partial.query.trim());
   }
   if (partial.page !== undefined) {
-    next = withParam(
-      next,
-      URL_PARAMS.page,
-      String(partial.page),
-      String(DEFAULT_SHIPMENT_LIST_QUERY.page),
-    );
+    // Always written, same as status - you're always looking at exactly one
+    // page, so the URL should say which. query is the only param that still
+    // means "nothing applied" at its default, so it's the only one stripped.
+    next = withParam(next, URL_PARAMS.page, String(partial.page));
   }
 
   return next;
