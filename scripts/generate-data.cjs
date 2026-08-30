@@ -1,4 +1,8 @@
 const fs = require("fs");
+
+// Row count from the first CLI arg, e.g. `node scripts/generate-data.cjs 100000`.
+const SHIPMENT_COUNT = Number(process.argv[2]) || 1000;
+
 const statusList = ["OPEN", "IN_TRANSIT", "DELIVERED"];
 const statuses = statusList.map((status) => ({ id: status }));
 const clients = [
@@ -31,7 +35,7 @@ const openAssignments = assignments.filter((a) => a.status === "OPEN");
 
 const shipments = [];
 
-for (let i = 1; i <= 1000; i++) {
+for (let i = 1; i <= SHIPMENT_COUNT; i++) {
   const arrival = new Date(baseDate);
   arrival.setDate(arrival.getDate() - Math.floor(Math.random() * 10));
   const eta = new Date(arrival);

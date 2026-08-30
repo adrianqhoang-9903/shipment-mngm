@@ -54,12 +54,7 @@ export const mergeListParams = (
   let next = current;
 
   if (partial.status !== undefined) {
-    next = withParam(
-      next,
-      URL_PARAMS.status,
-      partial.status,
-      DEFAULT_SHIPMENT_LIST_QUERY.status,
-    );
+    next = withParam(next, URL_PARAMS.status, partial.status);
   }
   if (partial.query !== undefined) {
     next = withParam(next, URL_PARAMS.query, partial.query.trim());

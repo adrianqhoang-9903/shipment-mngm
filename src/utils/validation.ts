@@ -21,3 +21,6 @@ export const validateNumberInRange = (
 
   return "";
 };
+
+export const validateRequiredText = (rawValue: string): string =>
+  rawValue.trim() ? "" : "Please enter a value.";

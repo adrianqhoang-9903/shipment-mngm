@@ -11,13 +11,18 @@ describe("withParam", () => {
   });
 
   it("deletes on null", () => {
-    expect(withParam(params("selected=shp_1"), "selected", null).has("selected")).toBe(
-      false,
-    );
+    expect(
+      withParam(params("selected=shp_1"), "selected", null).has("selected"),
+    ).toBe(false);
   });
 
   it("deletes rather than writes a value equal to the default", () => {
-    const next = withParam(params("status=IN_TRANSIT"), "status", "OPEN", "OPEN");
+    const next = withParam(
+      params("status=IN_TRANSIT"),
+      "status",
+      "OPEN",
+      "OPEN",
+    );
 
     expect(next.has("status")).toBe(false);
   });
@@ -48,7 +53,7 @@ describe("readListParams", () => {
       status: "OPEN",
       query: "",
       page: 1,
-      perPage: 25,
+      perPage: 50,
     });
   });
 
@@ -57,7 +62,7 @@ describe("readListParams", () => {
       status: "IN_TRANSIT",
       query: "sony",
       page: 3,
-      perPage: 25,
+      perPage: 50,
     });
   });
 
@@ -80,7 +85,9 @@ describe("readListParams", () => {
 
 describe("mergeListParams", () => {
   it("only touches the keys it was given", () => {
-    const next = mergeListParams(params("status=IN_TRANSIT&q=sony"), { page: 2 });
+    const next = mergeListParams(params("status=IN_TRANSIT&q=sony"), {
+      page: 2,
+    });
 
     expect(next.get("status")).toBe("IN_TRANSIT");
     expect(next.get("q")).toBe("sony");
@@ -96,21 +103,31 @@ describe("mergeListParams", () => {
     expect(next.get("selected")).toBe("shp_42");
   });
 
-  it("strips defaults instead of writing them", () => {
+  it("strips a default page but keeps the default status", () => {
     const next = mergeListParams(params("status=IN_TRANSIT&page=4"), {
       status: "OPEN",
       page: 1,
     });
 
-    expect(next.toString()).toBe("");
+    expect(next.toString()).toBe("status=OPEN");
+  });
+
+  it("writes the default status into a query string that has none", () => {
+    expect(mergeListParams(params(""), { status: "OPEN" }).get("status")).toBe(
+      "OPEN",
+    );
   });
 
   it("trims the query before it reaches the URL", () => {
-    expect(mergeListParams(params(""), { query: "  sony  " }).get("q")).toBe("sony");
+    expect(mergeListParams(params(""), { query: "  sony  " }).get("q")).toBe(
+      "sony",
+    );
   });
 
   it("drops the query key when the search is only whitespace", () => {
-    expect(mergeListParams(params("q=sony"), { query: "   " }).has("q")).toBe(false);
+    expect(mergeListParams(params("q=sony"), { query: "   " }).has("q")).toBe(
+      false,
+    );
   });
 
   it("does not mutate the params it was given", () => {

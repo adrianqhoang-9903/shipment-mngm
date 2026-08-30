@@ -6,6 +6,7 @@ import {
   LATITUDE_RANGE,
   LONGITUDE_RANGE,
   validateNumberInRange,
+  validateRequiredText,
 } from "../../../utils/validation";
 import TextField from "../../FormFields/TextField";
 import { notify } from "../../Toast/toastStore";
@@ -100,6 +101,7 @@ const CreateShipmentDialog = ({
             type="text"
             value={values.label}
             onChange={handleFieldChange("label")}
+            validate={validateRequiredText}
             required
           />
           <TextField
@@ -108,6 +110,7 @@ const CreateShipmentDialog = ({
             type="text"
             value={values.client_name}
             onChange={handleFieldChange("client_name")}
+            validate={validateRequiredText}
             required
           />
           <TextField
@@ -116,6 +119,7 @@ const CreateShipmentDialog = ({
             type="text"
             value={values.warehouse_id}
             onChange={handleFieldChange("warehouse_id")}
+            validate={validateRequiredText}
             required
           />
           <TextField

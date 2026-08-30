@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchShipments } from "../services/shipments";
+import { URL_PARAMS } from "../constants";
 import { mergeListParams, readListParams } from "../utils/queryParams";
 import type { Shipment, ShipmentListUrlQuery } from "../types";
 
@@ -25,6 +26,14 @@ export const useShipments = () => {
       replace,
     });
   };
+
+  useEffect(() => {
+    if (searchParams.has(URL_PARAMS.status)) return;
+
+    setSearchParams((current) => mergeListParams(current, { status }), {
+      replace: true,
+    });
+  }, [searchParams, setSearchParams, status]);
 
   const refetch = () => {
     setRefreshKey((key) => key + 1);
