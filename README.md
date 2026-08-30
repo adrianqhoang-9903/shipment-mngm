@@ -150,7 +150,7 @@ In a longer-lived or larger app, these become worth doing:
 - **Server-state management library (e.g. `TanStack Query`):** adds server-state cache, mutations, and observations, and standardizes behavior among API queries.
 - **Component and integration tests:** Tests user-flows and integrations with other features.
 - **Form and validation library (e.g.RHF + Zod):** past ~10 create fields, or once cross-field rules multiply, or when a validation schema needs sharing with the backend. At 5–7 fields with native validation it's overhead.
-- **Server-owned rules:** transitions and the assignment-required rule sit in a client table only because the mock backend has no validation layer. In production, they should be server-enforced, with the client holding a copy for instant feedback. Same for `clients` / `shipment_count`.
+- **Server-owned rules:** transitions and the assignment-required rule sit in a client table only because the mock backend has no validation layer. In production, they should be server-enforced, with the client holding a copy for instant feedback. Same for `clients` / `shipment_count`. Same for uniqueness — nothing stops two shipments sharing a label and client today; that's a server constraint, and enforcing it on the client would mean pulling the whole collection, which the pagination model exists to avoid.
 - **HTTP caching:** a real backend sending `ETag` / `Last-Modified` lets single-resource GETs come back as `304 Not Modified` when nothing's changed.
 
 ## Improvements

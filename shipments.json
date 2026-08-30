@@ -597,12 +597,12 @@
       "id": "shp_003",
       "client_name": "CargoTrans",
       "label": "SFO-581-250523-3",
-      "status": "OPEN",
+      "status": "IN_TRANSIT",
       "arrival_date": "2026-08-29T15:47:21.862Z",
-      "delivery_by_date": "2026-08-31T15:47:21.862Z",
+      "delivery_by_date": "2026-08-31T23:59:59.999Z",
       "eta": "2026-08-30T03:47:21.862Z",
       "warehouse_id": "581",
-      "assignment_id": null,
+      "assignment_id": "as_017",
       "lat": 32.632781046579396,
       "lng": -96.55509540463918
     },
@@ -675,12 +675,12 @@
       "id": "shp_009",
       "client_name": "DHL",
       "label": "SEA-581-250529-9",
-      "status": "OPEN",
+      "status": "IN_TRANSIT",
       "arrival_date": "2026-08-20T15:47:21.862Z",
-      "delivery_by_date": "2026-08-22T15:47:21.862Z",
+      "delivery_by_date": "2026-08-22T23:59:59.999Z",
       "eta": "2026-08-22T02:47:21.862Z",
       "warehouse_id": "581",
-      "assignment_id": null,
+      "assignment_id": "as_009",
       "lat": 32.8930998855088,
       "lng": -96.6498219967224
     },
@@ -703,11 +703,11 @@
       "label": "LAX-581-250521-11",
       "status": "DELIVERED",
       "arrival_date": "2026-08-23T15:47:21.862Z",
-      "delivery_by_date": "2026-08-25T15:47:21.862Z",
+      "delivery_by_date": "2026-09-02T23:59:59.999Z",
       "eta": "2026-08-24T04:47:21.862Z",
       "warehouse_id": "581",
       "assignment_id": "as_011",
-      "lat": 32.939358149489905,
+      "lat": 33.939358149489905,
       "lng": -97.01458223593832
     },
     {
@@ -750,19 +750,6 @@
       "lng": -96.99696778217778
     },
     {
-      "id": "shp_015",
-      "client_name": "Samsung",
-      "label": "EWR-581-250525-15",
-      "status": "OPEN",
-      "arrival_date": "2026-08-24T15:47:21.862Z",
-      "delivery_by_date": "2026-08-26T15:47:21.862Z",
-      "eta": "2026-08-25T21:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.84570231969972,
-      "lng": -96.92891400738588
-    },
-    {
       "id": "shp_016",
       "client_name": "DHL",
       "label": "LAX-581-250526-16",
@@ -787,19 +774,6 @@
       "assignment_id": "as_037",
       "lat": 32.66665043309129,
       "lng": -96.52163618267674
-    },
-    {
-      "id": "shp_018",
-      "client_name": "ShipCo",
-      "label": "SFO-581-250528-18",
-      "status": "OPEN",
-      "arrival_date": "2026-08-29T15:47:21.862Z",
-      "delivery_by_date": "2026-08-31T15:47:21.862Z",
-      "eta": "2026-08-30T20:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.62636044610615,
-      "lng": -96.64473463535818
     },
     {
       "id": "shp_019",
@@ -831,14 +805,14 @@
       "id": "shp_021",
       "client_name": "Sony",
       "label": "LAX-581-250521-21",
-      "status": "OPEN",
+      "status": "DELIVERED",
       "arrival_date": "2026-08-26T15:47:21.862Z",
-      "delivery_by_date": "2026-08-28T15:47:21.862Z",
+      "delivery_by_date": "2026-08-29T23:59:59.999Z",
       "eta": "2026-08-26T15:47:21.862Z",
       "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.824368098012734,
-      "lng": -96.93971876545532
+      "assignment_id": "as_011",
+      "lat": 33,
+      "lng": -97.93971876545532
     },
     {
       "id": "shp_022",
@@ -867,19 +841,6 @@
       "lng": -96.66708622698626
     },
     {
-      "id": "shp_024",
-      "client_name": "CargoTrans",
-      "label": "SEA-581-250524-24",
-      "status": "OPEN",
-      "arrival_date": "2026-08-21T15:47:21.862Z",
-      "delivery_by_date": "2026-08-23T15:47:21.862Z",
-      "eta": "2026-08-21T19:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.77676453080112,
-      "lng": -96.50163200486578
-    },
-    {
       "id": "shp_025",
       "client_name": "ShipCo",
       "label": "EWR-581-250525-25",
@@ -904,19 +865,6 @@
       "assignment_id": "as_006",
       "lat": 32.626265594506535,
       "lng": -97.33949107268724
-    },
-    {
-      "id": "shp_027",
-      "client_name": "Oceanic",
-      "label": "JFK-581-250527-27",
-      "status": "OPEN",
-      "arrival_date": "2026-08-25T15:47:21.862Z",
-      "delivery_by_date": "2026-08-27T15:47:21.862Z",
-      "eta": "2026-08-25T21:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.95995708780282,
-      "lng": -96.98442985102956
     },
     {
       "id": "shp_028",
@@ -948,12 +896,12 @@
       "id": "shp_030",
       "client_name": "DHL",
       "label": "EWR-581-250520-30",
-      "status": "OPEN",
+      "status": "DELIVERED",
       "arrival_date": "2026-08-26T15:47:21.862Z",
-      "delivery_by_date": "2026-08-28T15:47:21.862Z",
+      "delivery_by_date": "2026-08-28T23:59:59.999Z",
       "eta": "2026-08-28T06:47:21.862Z",
       "warehouse_id": "581",
-      "assignment_id": null,
+      "assignment_id": "as_011",
       "lat": 32.853516159111116,
       "lng": -96.75151535793641
     },
@@ -984,19 +932,6 @@
       "lng": -96.84478017977844
     },
     {
-      "id": "shp_033",
-      "client_name": "Logix",
-      "label": "SFO-581-250523-33",
-      "status": "OPEN",
-      "arrival_date": "2026-08-28T15:47:21.862Z",
-      "delivery_by_date": "2026-08-30T15:47:21.862Z",
-      "eta": "2026-08-28T23:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.965008979958135,
-      "lng": -97.3846480247443
-    },
-    {
       "id": "shp_034",
       "client_name": "Oceanic",
       "label": "SEA-581-250524-34",
@@ -1021,19 +956,6 @@
       "assignment_id": "as_029",
       "lat": 32.69279093402654,
       "lng": -97.27766435799005
-    },
-    {
-      "id": "shp_036",
-      "client_name": "Samsung",
-      "label": "LAX-581-250526-36",
-      "status": "OPEN",
-      "arrival_date": "2026-08-25T15:47:21.862Z",
-      "delivery_by_date": "2026-08-27T15:47:21.862Z",
-      "eta": "2026-08-27T05:47:21.862Z",
-      "warehouse_id": "581",
-      "assignment_id": null,
-      "lat": 32.78072402477919,
-      "lng": -96.61511393147835
     },
     {
       "id": "shp_037",
@@ -13566,6 +13488,123 @@
       "assignment_id": "as_018",
       "lat": 33.033612767618635,
       "lng": -97.32308543542051
+    },
+    {
+      "client_name": "TEST CLIENT",
+      "label": "TesT",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-31T23:59:59.999Z",
+      "eta": "2026-08-31T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 105,
+      "id": "d7Ejn0FhSMY"
+    },
+    {
+      "client_name": "test",
+      "label": "test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 12,
+      "lng": 106,
+      "id": "OPuuYfzXTqs"
+    },
+    {
+      "client_name": "test",
+      "label": "test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 107,
+      "id": "nmppKGXLcvA"
+    },
+    {
+      "client_name": "Test",
+      "label": "Test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 20,
+      "lng": 100,
+      "id": "7hgoCm7rv2A"
+    },
+    {
+      "client_name": "test",
+      "label": "test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 107,
+      "id": "2sF_wx93Ibs"
+    },
+    {
+      "client_name": "test",
+      "label": "test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "581",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 107,
+      "id": "ojETG9U7t_E"
+    },
+    {
+      "client_name": "Test334",
+      "label": "Test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "512",
+      "assignment_id": null,
+      "lat": 17,
+      "lng": 107,
+      "id": "akuulTMVg0k"
+    },
+    {
+      "client_name": "Test",
+      "label": "Test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "555",
+      "assignment_id": null,
+      "lat": 14,
+      "lng": 41,
+      "id": "855LTIYuCMk"
+    },
+    {
+      "client_name": "Test",
+      "label": "Test",
+      "status": "OPEN",
+      "arrival_date": "2026-08-30T00:00:00.000Z",
+      "delivery_by_date": "2026-08-30T23:59:59.999Z",
+      "eta": "2026-08-30T23:59:59.999Z",
+      "warehouse_id": "555",
+      "assignment_id": null,
+      "lat": 2,
+      "lng": 44,
+      "id": "M1Yvfu2UG3A"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
