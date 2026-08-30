@@ -181,7 +181,7 @@ const EditShipmentForm = ({
         required
       />
       <div className={styles.actions}>
-        <button type="submit" disabled={isSaving || isDeleting}>
+        <button type="submit" disabled={!isDirty || isSaving || isDeleting}>
           {isSaving ? "Saving..." : "Save"}
         </button>
         <button

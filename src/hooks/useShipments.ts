@@ -27,7 +27,7 @@ export const useShipments = () => {
     partial: Partial<ShipmentListUrlQuery>,
     { replace = false }: { replace?: boolean } = {},
   ) => {
-    setSearchParams((current) => mergeListParams(current, partial), {
+    setSearchParamsRef.current((current) => mergeListParams(current, partial), {
       replace,
     });
   };

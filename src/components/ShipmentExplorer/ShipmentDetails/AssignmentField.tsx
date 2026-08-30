@@ -52,21 +52,21 @@ const AssignmentField = ({
 
   useEffect(() => {
     setAssignmentLabel(null);
-    const assignmentId = shipment.assignment_id;
-    if (!assignmentId) return;
+    const currentAssignmentId = shipment.assignment_id;
+    if (!currentAssignmentId) return;
 
     const controller = new AbortController();
 
     const load = async () => {
       try {
         const assignment = await fetchAssignmentById(
-          assignmentId,
+          currentAssignmentId,
           controller.signal,
         );
         setAssignmentLabel(assignment.label);
       } catch {
         if (controller.signal.aborted) return;
-        setAssignmentLabel(assignmentId);
+        setAssignmentLabel(currentAssignmentId);
       }
     };
 
@@ -123,7 +123,15 @@ const AssignmentField = ({
           options={assignmentOptions}
           onChange={onAssignmentIdChange}
           placeholder={placeholder}
-          disabled={assignmentsLoading || !isAssigning}
+          // Not disabled while assignmentsLoading, even though there's
+          // nothing to pick yet - a disabled control is exempt from native
+          // constraint validation entirely (unlike hidden), so disabling it
+          // during the fetch would let Enter/Save through with `required`
+          // silently unenforced and no assignment ever chosen. Staying
+          // enabled-but-empty keeps this field inside the same validation
+          // every other required field already relies on; the "Loading
+          // assignments..." placeholder already communicates the state.
+          disabled={!isAssigning}
           required={isAssigning}
         />
       ) : (

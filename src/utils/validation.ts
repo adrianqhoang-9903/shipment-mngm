@@ -5,9 +5,13 @@ export const validateNumberInRange = (
   rawValue: string,
   range: { min: number; max: number },
 ): string => {
+  if (rawValue === "") return "";
+
   const trimmed = rawValue.trim();
 
-  if (trimmed === "") return "";
+  if (trimmed === "") {
+    return "Please enter a valid number.";
+  }
 
   const parsed = Number(trimmed);
 

@@ -12,10 +12,18 @@ describe("validateNumberInRange", () => {
     expect(validateNumberInRange("32.8", LATITUDE_RANGE)).toBe(VALID);
   });
 
-  it("treats empty and whitespace-only as valid", () => {
+  it("treats only the true empty string as valid, deferring to required", () => {
     expect(validateNumberInRange("", LATITUDE_RANGE)).toBe(VALID);
-    expect(validateNumberInRange("   ", LATITUDE_RANGE)).toBe(VALID);
   });
+
+  it.each([" ", "   ", "\t", "\n"])(
+    "rejects the whitespace-only value %o rather than coercing it to 0",
+    (blank) => {
+      expect(validateNumberInRange(blank, LATITUDE_RANGE)).toBe(
+        "Please enter a valid number.",
+      );
+    },
+  );
 
   it("accepts the exact bounds, at both ends", () => {
     expect(validateNumberInRange("-90", LATITUDE_RANGE)).toBe(VALID);

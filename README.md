@@ -119,13 +119,14 @@ Where the spec is ambiguous, a reasonable call was made and recorded here.
 - **Hand-rolled form state — no Formik, React Hook Form, or Zod.**
   - **Forms are small.** Five editable fields in Edit, seven in Create. `useForm` is `values` / `isDirty` / `handleSubmit` in ~40 lines.
   - **The browser validates inline and on submit.** Native constraint validation plus per-field `setCustomValidity()` messages block a bad submit. Save / Create disables only while a request is in flight.
-  - `lat`/`lng` are handled using `text` fields and parsed afterwards, as `number` fields would parse value mid-input (e.g. (`-`, `.`) as `""`, and `Number("")` as `0`), causing issues.
+  - `lat`/`lng` are handled using `text` fields and parsed afterwards, as `number` fields would parse value mid-input (e.g. (`-`, `.`) as `""`, and `Number("")` as `0`), causing issues. The same coercion-to-`0` risk exists for whitespace (`Number(" ")` is also `0`, not `NaN`) and `required` alone doesn't catch it (it only rejects `""`) — `validateNumberInRange` treats a non-empty-but-blank value as invalid rather than deferring to `required`.
+  - The `OPEN → IN_TRANSIT` assignment picker stays enabled (not `disabled`) while its options are loading — a `disabled` control is exempt from constraint validation entirely, so disabling it during the fetch would let a same-instant Save through with `required` silently unenforced and no assignment ever chosen.
 - **No list-patching.** No editable fields are ever shown on the shipments list, therefore I decided to forgo patching. Only status change / delete would refetch the list (because these actions alter the list itself instead of modifying a shipment). If the list shows editable fields like Delivery Date, however, optimistic patching should be implemented.
 - **`clients` / `shipment_count` are read, never written.** They're server-derived aggregates over an assignment's shipments (see Assumptions).
 
 ## Testing
 
-- **39 tests, all on the pure logic** : the `_where` query builder, URL-param read / write / merge, coordinate-range validation. These are the spots where a wrong answer is silent (zero rows that read as "no results", a filter quietly dropped), not a visible break.
+- **43 tests, all on the pure logic** : the `_where` query builder, URL-param read / write / merge, coordinate-range validation. These are the spots where a wrong answer is silent (zero rows that read as "no results", a filter quietly dropped, whitespace saved as coordinate `0`), not a visible break.
 
 ## Extra Credit seams 
 
@@ -154,3 +155,4 @@ Some workarounds / imperfections / missing features that could have been improve
 
 - **Data-router mode (`createBrowserRouter` + `loader`s / `action`s).** Currently `setSearchParams` needs to be put in a `ref` because it is re-created every time navigation happens. A route `loader` ties a fetch to a navigation and supersedes a stale one for free.
 - Keyboard handlers for the list (e.g. up/down for navigation between rows, enter to select shipment).
+- Focus on the first error field on Save / Create
